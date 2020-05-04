@@ -1,0 +1,625 @@
+---
+title: "Tutorial for Double Matching"
+author: "Bo Zhnag"
+date: "Last update: April 14th, 2020"
+output:
+  rmdformats::readthedown:
+    self_contained: true
+    thumbnails: true
+    lightbox: true
+    gallery: false
+    highlight: tango
+link-citations: true
+---
+
+# Introduction
+
+This file serves as an introduction to the double matching package. We first load the R code and an illustrative dataset from Rouse (1995). We will be primarily working with 6 covariates: two nominal (black and female), two ordinal (dad's education and mom's education), and two continuous (family income and test score). Treatment is an instrumental variable, equal to $1$ if the subject is doubly encouraged, meaning the both the excess travel time and excess four-year college tuition are larger than the median, and to be $0$ if the subject is doubly discouraged. There are $1122$ subjects that are doubly encouraged (treated), and $1915$ that are doubly discouraged (control). 
+
+```{r setup, include=TRUE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(digits=4)
+library(optmatch)
+library(RItools)
+library(dplyr)
+```
+
+```{r, load the pacakge, echo=TRUE}
+# Load the package
+library(match2C) # Need to install the package and its dependencies first
+```
+
+We construct some imputs and fit a propensity score model. 
+
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+attach(dt_Rouse)
+X = cbind(female,black,bytest,dadeduc,momeduc,fincome)
+Z = IV
+
+# Fit a propensity score model
+propensity = glm(IV~female+black+bytest+dadeduc+momeduc+fincome,
+                 family=binomial)$fitted.values
+
+# Number of treated and control
+n_t = sum(Z)
+n_c = length(Z) - n_t
+
+dt_Rouse$propensity = propensity
+detach(dt_Rouse)
+```
+
+
+# Matching with two user-supplied distance matrices
+
+## A very quick guide and a simple example
+
+We illustrate how to use function *match_2C_mat* in this section. *match_2C_mat* performs a pair matching via a two-part network. The first part is a treatment-to-control network characterized by the distance matrix *dist_mat_1*, and the second part is another treatment-to-control network characterized by the distance matrix *dist_mat_2*. Note that both matrices have dimenstion n_t-by-n_c. A treatment-to-control distance matrix may be obtained, for instance, by using function *match_on* in the R package optmatch.
+
+Note that the function *match_2C_mat* takes the following inputs:
+
+* Z: A length-n vector of treatment indicator.
+
+* X: A n-by-p matrix of covariates.
+
+* dataset: The original dataset.
+
+* dist_mat_1: A user-specified treatment-by-control (n_t-by-n_c) distance matrix.
+
+* dist_mat_2: A second user-specified treatment-by-control (n_t-by-n_c) distance matrix.
+
+* lambda: A penalty that does a trade-off between two parts of the network.
+
+* controls: Number of controls matched to each treated. Default is 1.
+
+* p_1: A length-n vector on which caliper_1 applies, e.g. a vector of propensity score.
+
+* caliper_1: Size of caliper_1.
+
+* k_1: Maximum number of controls each treated is connected to in the first network.
+
+* p_2: A length-n vector on which caliper_2 applies, e.g. a vector of propensity score.
+
+* caliper_2: Size of caliper_2.
+
+* k_2: Maximum number of controls each treated is connected to in the second network.
+
+* penalty: Penalty for violating the caliper. Set to Inf by default.
+
+Below, *dist_mat_1* is based on the Mahalanobis distance between all covariates, and *dist_mat_2* is based on the Euclidean distance of the covariate *female*. A large penalty lambda is applied to the second distance matrix so that the algorithm is forced to find an optimal match that satisfies (near-)fine balance on the nominal variable *female*. We first perform a match that does not use any caliper. We will discuss how to use calipers in the next section.
+
+```{r mat no caliper, echo=TRUE}
+# Construct a distance matrix based on Mahalanobis distance
+dist_mat_1 = match_on(IV~female+black+bytest+dadeduc+momeduc+fincome, 
+                      method = 'mahalanobis', data = dt_Rouse)
+
+# Construct a second distance matrix based on variable female
+dist_mat_2 = match_on(IV ~ female, method = 'euclidean', data = dt_Rouse)
+matching_output = match_2C_mat(Z, dt_Rouse, dist_mat_1, dist_mat_2, 
+                               lambda = 10000, controls = 1,
+                               p_1 = NULL, p_2 = NULL)
+```
+
+The output of the function *match_2C_mat* is a list of three objects: 
+
+* *feasible*: 0/1 depending on the feasibility of the matching problem; 
+
+* *data_with_matched_set_ind*: a dataframe that is the same as the original dataframe, except that a column called *matched_set* and a column called *distance* are added to it. Variable *matched_set* assigns 1,2,...,n_t to each matched set, and NA to controls not matched to any treated. Variable *distance* records the distance (as specified in the left network) between each matched control and the treated, and assigns NA to all treated and cotnrols that are left unmatched. If matching is not feasible, NULL will be returned;
+
+* *matched_data_in_order*: a dataframe organized in the order of matched sets and otherwise the same as *data_with_matched_set_ind*. Null will be returned if the matching is infeasible.
+  
+Let's take a look at the output. The matching problem is indeed feasible:
+```{r mat no caliper 2 1, echo=TRUE}
+# Check feasibility
+matching_output$feasible
+```
+
+Below is the original dataset except that a column *matched_set* and a column *distance* are appended. Observe that the first six instances belong to $6$ different matched sets; therefore *matched_set* is from $1$ to $6$. These six instances are all treated subjects so their *distance* is NA.
+
+```{r mat no caliper 2 2, echo=TRUE}
+# Check the original dataset with two new columns
+head(matching_output$data_with_matched_set_ind, 6)
+```
+
+Below is a dataframe organized in the order of matched sets. Note that the first $2$ subjects belong to the same matched set; the next two subjects belong to the second matched set, and etc. 
+```{r mat no caliper 2 3, echo=TRUE}
+# Check dataframe organized in matched set indices
+head(matching_output$matched_data_in_order, 6)
+```
+
+
+## Sparsify the dense netowrk with calipers
+
+What function *match_2C_mat* does internally is to construct a list representation of the user-specified distance matrix and feed the list to *callrelax*, a FORTRAN routine that solves the network flow problem efficiently. A list representation of a treatment-by-control distance matrix consists of the following arguments:
+
+* *start_n*: a vector containing the node numbers of the start nodes of each arc in the network.
+* *end_n*: a vector containing the node numbers of the end nodes of each arc in the network.
+* *d*: a vector containing the integer cost of each arc in the network.
+
+Node 1,2,...,n_t correspond to *n_t* treatment nodes; n_t + 1, n_t + 2, ..., n_t + n_c correspond to *n_c* control nodes. *start_n*, *end_n*, and *d* have the same lengths, all of which equal to the number of edges.
+
+Function *create_list_from_mat* creates this list representation from the distance matrix and offers options to make the resulting list representation sparser by removing edges based on calipers. This function is itself of limited interest to most users. However, we would like to take a detour and illustrate how calipers are being used and how graphs are made sparse in this section.
+
+We first construct a distance matrix using *dt_Rouse* with Mahalanobis distance. By setting *p = NULL* in the function *create_list_from_mat*, we create a dense list representation and call it *list_0*. Note that *list_0* contains three vectors whose lengths are equal to $n_t \times n_c$ as no edge is removed. 
+
+```{r dist_mat, echo = TRUE}
+dist_mat_1 = match_on(IV ~ female + black + bytest + dadeduc + momeduc + fincome, 
+                      method = 'mahalanobis', data = dt_Rouse)
+
+list_0 = create_list_from_mat(Z, dist_mat_1, p = NULL) # p = NULL removes no edge
+length(list_0$start_n) # number of edges in the network
+identical(length(list_0$start_n), n_t*n_c) # Check # of edges is n_t * n_c
+```
+
+We can apply a propensity score caliper of size $0.05$ to remove edges by setting *p = propensity* and *caliper = 0.05*, where *propensity* is a vector of estimated propensity scores of all subjects. Observe that the number of edges is almost halved now.
+
+```{r dist_mat 2, echo = TRUE}
+list_1 = create_list_from_mat(Z, dist_mat_1, p = propensity, caliper = 0.05)
+length(list_1$start_n)
+```
+
+Sometimes, even with a tight caliper, say a propensity score caliper = 0.05 as above, some treated subjects are still connected to a large number of controls. One can further remove edges by setting a *limit* k on how many controls each treated is allowed to connect to; for instance, we may want each treated to be connected to the nearest $k = 100$ controls in the propensity score. This can be done by setting $k = 100$ in the function as is illustrated in the next chunk. Note that the number of edges is now much smaller.
+
+```{r dist_mat 3, echo = TRUE}
+list_2 = create_list_from_mat(Z, dist_mat_1, p = propensity, caliper = 0.05, k = 100)
+length(list_2$start_n)
+```
+
+When the size of caliper is set too small, the problem may become impossible. 
+
+```{r dist_mat 4 hard caliper fail, echo = TRUE}
+list_2 = create_list_from_mat(Z, dist_mat_1, p = propensity, caliper = 0.001)
+```
+
+Instead of using a *hard* caliper, function *create_list_from_mat* also allows a *soft* caliper, in the sense that the caliper is allowed to be violated at a cost. To use such a soft caliper, users may set option *penalty* to a large number. The default setting of *penalty* is *Inf*, corresponding to a hard caliper. 
+
+Observe that although *caliper* is set to a very small number (0.001) in the example below, the number of edges is the same as without a caliper, because a soft caliper is used here.
+```{r dist_mat 4, echo = TRUE}
+list_3 = create_list_from_mat(Z, dist_mat_1, p = propensity, caliper = 0.001, penalty = 10000)
+length(list_3$start_n)
+```
+
+## Matching using function *match_2C_mat* with options of caliper
+
+Function *match_2C_mat* allows users to perform a match with calipers as discussed in the previous section. To illustrate, we repeat the same exercise as did in the first section; however, we use a propensity score caliper (caliper = 0.05) and let $k_1 = 100$ this time for the first part of network, and a caliper = 0.1 on gender, i.e., we do not connect people with different gender.
+
+```{r mat with caliper, echo=TRUE}
+matching_output_2 = match_2C_mat(Z, dt_Rouse, dist_mat_1, dist_mat_2, 
+                                 lambda = 100000, controls = 1,
+                                p_1 = propensity, caliper_1 = 0.05, k_1 = 100, 
+                                p_2 = dt_Rouse$female, caliper = 0.1)
+matching_output_2$feasible
+head(matching_output_2$matched_data_in_order, 4)
+```
+
+There are at least two scenarios where the matching becomes infeasible. First, the matching is infeasible if some treated subjects are not connected to any controls. See the example below.
+
+```{r mat with caliper not feasible 1, echo=TRUE}
+matching_output_3 = match_2C_mat(Z, dt_Rouse, dist_mat_1, dist_mat_2, lambda = 100000, 
+                                p_1 = propensity, caliper_1 = 0.0001,
+                                p_2 = NULL, penalty =Inf)
+```
+
+Second, even when all treated are connected to at lease one control, the matching may still be infeasible when multiple treated subjects insist on the same control. For instance, in the example below, we set $k_1 = 1$ to connect each treated to only one control, and the problem is not feasible.
+```{r mat with caliper not feasible 2, echo=TRUE}
+matching_output_3 = match_2C_mat(Z, dt_Rouse, dist_mat_1, dist_mat_2, lambda = 100000, 
+                                p_1 = propensity, caliper_1 = 0.05, k_1 = 1, 
+                                p_2 = NULL)
+matching_output_3$feasible # feasible = 0 indicating the problem is not feasible.
+```
+
+In both cases, users are advised to either
+
+* Increase caliper or k
+
+* Set *penalty* to some large number to implement a soft caliper
+
+* Or both.
+
+
+See the example below:
+
+```{r mat with caliper 3, echo=TRUE}
+matching_output_3 = match_2C_mat(Z, dt_Rouse, dist_mat_1, dist_mat_2, lambda = 100000, 
+                                p_1 = propensity, caliper_1 = 0.0001,
+                                p_2 = NULL, penalty = 1000)
+matching_output_3$feasible # feasible = 0 indicating the problem is not feasible.
+```
+
+
+# Create list representations of distance matrices directly from data using built-in methods
+
+More experienced users may want to create a (possibly sparse) list representation of their distance matrix
+directly from data, instead of first building a distance matrix and then converting it to a list. 
+Function *create_list_from_scratch* is designed to do this. Roughly speaking, *create_list_from_scratch* is
+an analogue of the function *match_on* in the package *optmatch*. However, unlike *match_on* that outputs
+a distance matrix, *create_list_from_scratch* outputs a possibly sparse list representation.
+
+Currently, there are 5 default methods implemented: *maha* (Mahalanobis distance), *L1* (L1 disance), 
+*robust maha* (robust Mahalanobis distance), *0/1* (distance = 0 if and only if covariates are the same), 
+and *Hamming* (Hamming distance), and *other* allows user-supplied distance functions. 
+We will defer a discussion on how to use this user-supplied option to the next section.
+
+The minimal input to the function *create_list_from_scratch* is treatment Z and covariate matrix X. The user
+may choose the method via option *method*. Option *exact* allows users to specify variables that need to be
+exactly matched. Option *p* allows users to specify a varialbe/propensity score as 
+a caliper and options *caliper_low*, *caliper_high*, and *k* set the size of this caliper. The size of the caliper is
+defined by [variable - caliper_low, variable + caliper_high]. Having both *caliper_low* and *caliper_high* allows a
+so-called asymmetric caliper. By default, *caliper_high* is set of *caliper_low* and a symmetric caliper is used.
+
+Option *penalty* further allows users to make the specified caliper a *soft* caliper, in the sense that the caliper
+is allowed to be violated at a cost of *penalty*. Option *penalty* is set to *Inf* by default, meaning a *hard* caliper
+is implemented.
+
+
+These list representations will be the most fundamental building blocks for all kinds of matching functionalities. 
+We give several examples below to illustrate its usage.
+
+First, we create a list representation using the Mahalanobis distance without any caliper or exact matching requirement.
+```{r list from scratch ex1, echo=TRUE}
+# Mahalanobis distance on all variables
+dist_list_vanilla_maha = create_list_from_scratch(Z, X, exact = NULL, method = 'maha') 
+
+# Hamming distance on all variables
+dist_list_vanilla_Hamming = create_list_from_scratch(Z, X, exact = NULL, 
+                                                      method = 'Hamming') 
+
+# Robust Mahalanobis distance on all variables
+dist_list_vanilla_robust_maha = create_list_from_scratch(Z, X, exact = NULL, 
+                                                      method = 'robust maha') 
+
+```
+
+
+Second, we create a list representation using the Mahalanobis distance with a propensity score caliper of size $0.05$ and $k = 100$. 
+
+```{r list from scratch ex2, echo=TRUE}
+# Mahalanobis distance on all variables with pscore caliper
+dist_list_pscore_maha = create_list_from_scratch(Z, X, exact = NULL, p = propensity, 
+                                       caliper_low = 0.05, k = 100, method = 'maha') 
+
+# Hamming distance on all variables with pscore caliper
+dist_list_pscore_Hamming = create_list_from_scratch(Z, X, exact = NULL, p = propensity, 
+                                       caliper_low = 0.05, k = 100, method = 'Hamming') 
+
+# Robust Mahalanobis distance on all variables with pscore caliper
+dist_list_pscore_robust_maha = create_list_from_scratch(Z, X, exact = NULL, p = propensity, 
+                                       caliper_low = 0.05, k = 100, method = 'robust maha') 
+```
+
+
+If we specify too small a caliper, the problem may fail in the sense that some treated subjects are not
+connected to any control. See the example below.
+
+```{r list from scratch ex small caliper fail, echo=TRUE}
+dist_list_pscore_maha = create_list_from_scratch(Z, X, exact = NULL, p = propensity, 
+                                       caliper_low = 0.001, method = 'maha') 
+
+```
+
+In this case, users are advised to use a soft caliper by specifying a large penalty or increase the caliper size. See the example below.
+
+```{r list from scratch ex soft caliper, echo=TRUE}
+dist_list_pscore_maha = create_list_from_scratch(Z, X, exact = NULL, p = propensity, 
+                                       caliper_low = 0.001, method = 'maha', penalty = 1000) 
+
+```
+
+
+Next, we create a list representation without caliper; however, we insist that dad's education is exactly matched. This can be done by setting the option *exact* to a vector of names of variables to be exactly matched.
+
+```{r list from scratch ex3, echo=TRUE}
+dist_list_exact_dadeduc_maha = create_list_from_scratch(Z, X, exact = c('dadeduc'), 
+                                                        method = 'maha') 
+```
+
+Finally, we create a list representation with a propensity score caliper and $k = 100$; moreover, we insist that both dad's education and mom's education are exactly matched.
+```{r list from scratch ex4, echo=TRUE}
+dist_list_exact_dad_mom_with_caliper = create_list_from_scratch(Z, X, exact = c('dadeduc', 'momeduc'), 
+                                                p = propensity, caliper_low = 0.05, k = 100, method = 'maha') 
+```
+
+
+# Optimal matching with propensity score calipers: a classical approach and a new endeavor
+
+One of the most widely-used matching algorithms is Mahalanobis-distance-based metric matching with propensity score calipers (Rosenbaum and Rubin, 1985). We exhibit how to perform an optimal matching with propensity score caliper, and a more refined version of that under our double matching framework in this section, all with the function *match_2C_list*. 
+
+## The classical approach as in Rosenbaum and Rubin (1985)
+Below, we do a Mahalanobis-distance-based matching with a propensity score caliper equal to $0.2 \times \text{SD(propensity score)} \approx 0.008$.
+
+```{r optimal with pscore conventional, echo=TRUE}
+dist_list_pscore = create_list_from_scratch(Z, X, exact = NULL, p = propensity, 
+                                       caliper_low = 0.008, k = NULL, method = 'robust maha')
+
+matching_output_4 = match_2C_list(Z, dt_Rouse, dist_list_pscore, dist_list_2 = NULL, controls = 1)
+```
+
+Summary of the matched-pair distance (robust Mahalanobis distance) is displayed below. Some matched pairs seem to have quite large disance. 
+
+```{r optimal with pscore conventional check result, echo=FALSE}
+d = matching_output_4$matched_data_in_order$distance
+d = d[complete.cases(d)]
+summary(d)
+```
+
+The balance table is displayed below. The balance is decent, but seems improvable.
+
+```{r optimal with pscore conventional check result II, echo=FALSE}
+dt_matched = matching_output_4$data_with_matched_set_ind
+dt_matched = dt_matched[!is.na(dt_matched$distance),]
+dt_matched = dplyr::select(dt_matched, -matched_set, -distance)
+
+dt_treated = dt_Rouse[Z == 1, ]
+dt_report = rbind(dt_treated, dt_matched)
+xBalance(IV ~ female + black + bytest + fincome + dadeduc + momeduc + propensity, data = dt_report,  
+              report = c('adj.means', 'std.diffs'))
+```
+
+## An alternative approach based on Double Matching
+
+The new network design allows putting a smaller propensity score caliper on the right (caliper_2 = 0.002) and no caliper on the left, so that we would like to simultaneous minimize matched pair difference and obtain good overall balance.
+
+```{r optimal with pscore new, echo=TRUE}
+# Mahalanobis distance on all variables; no caliper
+dist_list_no_caliper = create_list_from_scratch(Z, X, exact = NULL, p = NULL, method = 'robust maha')
+
+# Soft caliper distance
+dist_list_2 = create_list_from_scratch(Z = Z, X = rep(1, length(Z)), exact = NULL,
+                                           p = propensity, caliper_low = 0.002, k = NULL,
+                                           method = 'Hamming', penalty = 100)
+dist_list_2 = revert_dist_list_cpp(n_t, n_c, dist_list_2$start_n, dist_list_2$end_n, dist_list_2$d)
+names(dist_list_2) = c('start_n', 'end_n', 'd')
+
+matching_output_5 = match_2C_list(Z, dt_Rouse, dist_list_no_caliper, dist_list_2, 
+                                  lambda = 1000, controls = 1)
+```
+
+Results are reported below. Compare it to the conventional approach and we observe that the new method improves *both* matched pair difference and overall covariate balance (standardized mean differences).
+
+```{r optimal with pscore new check results, echo=FALSE}
+d2 = matching_output_5$matched_data_in_order$distance
+d2 = d2[complete.cases(d2)]
+summary(d2)
+```
+
+
+```{r optimal with pscore new check results II, echo=FALSE}
+dt_matched = matching_output_5$data_with_matched_set_ind
+dt_matched = dt_matched[!is.na(dt_matched$distance),]
+dt_matched = dplyr::select(dt_matched, -matched_set, -distance)
+
+dt_treated = dt_Rouse[Z == 1, ]
+dt_report = rbind(dt_treated, dt_matched)
+tb = xBalance(IV ~ female + black + bytest + fincome + dadeduc + momeduc + propensity, data = dt_report,  
+              report = c('adj.means', 'std.diffs'))
+print(tb, digits = 4)
+```
+
+## A second alternative approach based on Double Matching plus directional penalty
+
+Another alternative approach is to directly balance the propensity score on the right using a version of directional penalty.
+There are two tuning parameters: $\lambda$ that controls the trade-off between matched-pair distance and overall balance, and $\alpha$ that controls the directional penalty. In general, when $\alpha$ is larger, the matching tends to over-compensate on the propensity score and yields matched controls whose average propensity score is higher than that of the treated. On the other hand, when $\alpha$ is small, the average propensity score of the matched controls tends to be smaller than that of the treated. After two trials, I select $\alpha = 0.45$ in this example and the result looks good.
+
+```{r optimal with pscore new 2, echo=TRUE}
+dist_list_no_caliper = create_list_from_scratch(Z, X, exact = NULL, p = NULL, method = 'robust maha')
+
+# Construct distance list with L_1 distance on 5 strata of pscore
+dist_list_pscore_right = create_list_from_scratch(Z, X = propensity, p = propensity, caliper_low = 0.5,
+                                                  method = 'vanilla_directional', alpha = 0.45)
+dist_list_pscore_right = revert_dist_list_cpp(n_t, n_c, dist_list_pscore_right$start_n, 
+                                              dist_list_pscore_right$end_n, dist_list_pscore_right$d)
+names(dist_list_pscore_right) = c('start_n', 'end_n', 'd')
+
+matching_output_5_2 = match_2C_list(Z, dt_Rouse, dist_list_no_caliper, dist_list_pscore_right, 
+                                  lambda = 10, controls = 1)
+```
+
+Again, results are better than the approach as in Rosenbaum and Rubin (1985) in both measures (matched pair Mahalanobis distance and Std. Diff).
+
+```{r optimal with pscore new 2 check results, echo=FALSE}
+d3 = matching_output_5_2$matched_data_in_order$distance
+d3 = d3[complete.cases(d3)]
+summary(d3)
+```
+
+
+```{r optimal with pscore new 2 check results II, echo=FALSE}
+dt_matched = matching_output_5_2$data_with_matched_set_ind
+dt_matched = dt_matched[!is.na(dt_matched$distance),]
+dt_matched = select(dt_matched, -matched_set, -distance)
+
+dt_treated = dt_Rouse[Z == 1, ]
+dt_report = rbind(dt_treated, dt_matched)
+tb = xBalance(IV ~ female + black + bytest + fincome + dadeduc + momeduc + propensity, data = dt_report,  
+              report = c('adj.means', 'std.diffs'))
+print(tb, digits = 4)
+```
+
+# Exact matching on one (or more) variable while balancing other variables
+
+## The classical approach: a one-shot matching approach
+
+Suppose we would like to construct an optimal pair matching and insist two subjects in each matched pair match exactly on dad's education and mom's education. A conventional approach is to form one Mahalanobis-distance-based distance matrix, and trim edges that do not correspond to exact matching on dad's education and mom's education. This one-shot approach can be done using the following code by setting *dist_list_2 = NULL*:
+
+```{r list exact on one and balance others one shot, echo=TRUE}
+# Mahalanobis distance with exact matching on dadeduc and momeduc
+dist_list_1 = create_list_from_scratch(Z, X, exact = c('dadeduc', 'momeduc'), p = propensity, caliper_low = 0.05, method = 'maha')
+
+matching_output_8 = match_2C_list(Z, dt_Rouse, dist_list_1, dist_list_2 = NULL, lambda = NULL)
+```
+
+One can check balance and it is not surprising that the balance of variables not exactly matched on (e.g., *bytest* and *fincome*) can be pretty poor as a consequence of forcing dad's education and mom's education to be exactly matched.
+
+```{r list exact on one and balance others one shot balance, echo=FALSE}
+dt_matched = matching_output_8$data_with_matched_set_ind
+dt_matched = dt_matched[!is.na(dt_matched$matched_set),]
+dt_matched = dplyr::select(dt_matched, -matched_set, -distance)
+
+dt_treated = dt_Rouse[Z == 1, ]
+dt_report = rbind(dt_treated, dt_matched)
+tb = xBalance(IV ~ female + black + bytest + fincome + dadeduc + momeduc, data = dt_report,  
+         report = c('adj.means', 'std.diffs'))
+print(tb, digits = 4)
+
+```
+
+## An alternative approach based on Double Matching
+
+Our new network design allows another way to do the same thing: we creat a first distance list using Mahalanobis distance with exact matching constraint on dadeduc and momeduc, and a second distance list using Mahalanobis distance on other covariates, as implemented below:
+
+```{r list exact on one and balance others, echo=TRUE}
+# Maha distance with exact matching on dadeduc and momeduc
+dist_list_1 = create_list_from_scratch(Z, X, exact = c('dadeduc', 'momeduc'), method = 'maha')
+
+# Maha distance on all other variables
+dist_list_2 = create_list_from_scratch(Z, X[, c('female', 'black', 'bytest', 'fincome')], 
+                                       p = propensity, caliper_low = 0.05, method = 'maha')
+
+dist_list_2 = revert_dist_list_cpp(n_t, n_c, dist_list_2$start_n, 
+                                  dist_list_2$end_n, dist_list_2$d)
+names(dist_list_2) = c('start_n', 'end_n', 'd')
+
+matching_output_9 = match_2C_list(Z, dt_Rouse, dist_list_1, dist_list_2, lambda = 100)
+```
+
+One can check dadeduc and momeduc are exactly matched and the balance on other variables is now *significantly better* compared to the one-shot approach above. Moreover, this new design allows putting a directional penalty on the second network, while still matching exactly on important variables users insist on.
+
+```{r list exact on one and balance others 3, echo = FALSE}
+dt_matched = matching_output_9$data_with_matched_set_ind
+dt_matched = dt_matched[!is.na(dt_matched$matched_set),]
+dt_matched = dplyr::select(dt_matched, -matched_set, -distance)
+
+dt_treated = dt_Rouse[Z == 1, ]
+dt_report = rbind(dt_treated, dt_matched)
+tb = xBalance(IV ~ female + black + bytest + fincome + dadeduc + momeduc, data = dt_report,  
+         report = c('adj.means', 'std.diffs'))
+print(tb, digits = 4)
+
+```
+
+
+There are many other options for the right network. For instance, one can either apply a tighter caliper, or directly balance the propensity score, as was done in the last subsection. The code is very similar and is omitted here.
+
+
+# Other flexible matching techniques: fine balance, refined balance, Hamming distance, multiple controls, etc.
+
+The new network design also allows some flexible matching techniques, and we give several examples in this section.
+
+## Optimal matching with marginal balance on one (or more) categorical variable(s)
+
+We give two examples. Example 1 performs an optimal matching with fine balance on one categorical variable, namely dad's education; Example 2 performs an optimal matching while minimizing total Hamming distance between four variables: dad's education, mom's education, female, and black. 
+
+### Example 1: optimal matching with fine balance on one variable
+
+We want to do an optimal matching with (near-)fine balance on dad's education. This can be done under our framework by letting the first network be a usual Mahalanobis-distance-based (or robust Mahalanobis-distance-based) distance list, possibly with a propensity score caliper, and the second network be one that assigns a '0/1' distance to two subjects based on dad's education.
+
+
+```{r optimal with near-fine on dadeduc, echo=TRUE}
+# Mahalanobis distance on all variables
+dist_list_pscore = create_list_from_scratch(Z, X, exact = NULL, p = propensity, 
+                                       caliper_low = 0.05, k = 100, method = 'maha')
+#  '0/1' distance on variable ``dadeduc''
+dist_list_2 = create_list_from_scratch(Z = Z, X = X[, c('dadeduc')], 
+                                       exact = NULL, p = NULL, method = '0/1')
+
+dist_list_2 = revert_dist_list_cpp(n_t, n_c, dist_list_2$start_n, dist_list_2$end_n, dist_list_2$d)
+names(dist_list_2) = c('start_n', 'end_n', 'd')
+
+
+matching_output_6 = match_2C_list(Z, dt_Rouse, dist_list_pscore, dist_list_2, 
+                                  lambda = 1000, controls = 1)
+```
+
+
+One can check that the matched controls and the treated have the same marginal distribution of ``dadeduc''.
+
+```{r  optimal with near-fine on dadeduc 2, echo=FALSE}
+dt_matched = matching_output_6$data_with_matched_set_ind
+dt_matched = dt_matched[!is.na(dt_matched$matched_set),]
+table(dt_matched$IV, dt_matched$dadeduc)
+```
+
+### Example 2: optimal matching while minimzing total number of mismatches on four categories
+
+We consider performing an optimal matching while minimzing the total number of mismatches on varaibles dad's education, mom's education, female, and black. This can be done by setting up the second distance list using the built-in Hamming distance option as shown below: 
+
+```{r optimal with Hamming, echo=TRUE}
+# Mahalanobis distance with pscore caliper on all variables
+dist_list_pscore = create_list_from_scratch(Z, X, exact = NULL, p = propensity, 
+                                       caliper_low = 0.05, k = 100, method = 'maha')
+#  Hamming distance on four variables
+dist_list_2 = create_list_from_scratch(Z = Z, X = X[, c('dadeduc', 'momeduc', 'female', 'black')], 
+                                       exact = NULL, p = NULL, method = 'Hamming')
+dist_list_2 = revert_dist_list_cpp(n_t, n_c, dist_list_2$start_n, dist_list_2$end_n, dist_list_2$d)
+names(dist_list_2) = c('start_n', 'end_n', 'd')
+
+matching_output_7 = match_2C_list(Z, dt_Rouse, dist_list_pscore, dist_list_2, lambda = 100000)
+```
+
+Again, we can check the balance and it looks good:
+
+```{r optimal with Hamming check balance, echo=FALSE}
+dt_matched = matching_output_7$data_with_matched_set_ind
+dt_matched = dt_matched[!is.na(dt_matched$matched_set),]
+dt_matched = dplyr::select(dt_matched, -matched_set, -distance)
+
+dt_treated = dt_Rouse[Z == 1, ]
+dt_report = rbind(dt_treated, dt_matched)
+tb = xBalance(IV ~ female + black + bytest + fincome + dadeduc + momeduc, data = dt_report,  
+              report = c('adj.means', 'std.diffs'))
+print(tb, digits = 4)
+```
+
+## Matching with multiple controls
+
+We illustrate how to perform a fixed-ratio matching in this section. We collect the first $500$ treated subjects and retain all $1915$ controls.
+
+```{r fixed-ratio, echo=FALSE}
+dt_Rouse_treated = head(dt_Rouse[Z==1,], 500)
+dt_Rouse_control = dt_Rouse[Z==0,]
+dt_Rouse_fixed_ratio = rbind(dt_Rouse_treated, dt_Rouse_control)
+
+attach(dt_Rouse_fixed_ratio)
+X = cbind(female,black,bytest,dadeduc,momeduc,fincome)
+Z = IV
+propensity = glm(IV~female+black+bytest+dadeduc+momeduc+fincome,
+                 family=binomial)$fitted.values
+n_t = sum(Z)
+n_c = length(Z) - n_t
+
+dt_Rouse_fixed_ratio$propensity = propensity
+detach(dt_Rouse_fixed_ratio)
+```
+
+We perfrom a 1-to-3 matching with fine balance on female. One way to do this is to construct two appropriate distance matrices, and use *match_2C_mat* with option *controls = 3*.
+
+```{r fixed-ratio 2, echo=FALSE}
+dist_mat_fixed_ratio_1 = match_on(IV~female+black+bytest+dadeduc+momeduc+fincome, 
+                      method = 'mahalanobis', data = dt_Rouse_fixed_ratio)
+
+dist_mat_fixed_ratio_2 = match_on(IV ~ female, method = 'euclidean', data = dt_Rouse_fixed_ratio)
+
+matching_output = match_2C_mat(Z, dt_Rouse_fixed_ratio, 
+                               dist_mat_fixed_ratio_1, dist_mat_fixed_ratio_2, 
+                               lambda = 10000, controls = 3,
+                               p_1 = NULL, p_2 = NULL)
+
+head(matching_output$matched_data_in_order, 12)
+```
+
+Similarly, we can construct distance list from scratch and use function *match_2C_list* with option *controls* set to $k$ for a 1-to-k match.
+
+```{r fixed-ratio 3, echo=FALSE}
+dist_list_pscore = create_list_from_scratch(Z, X, exact = NULL, p = propensity, 
+                                       caliper_low = 0.1, k = NULL, method = 'robust maha')
+
+dist_list_2 = create_list_from_scratch(Z = Z, X = rep(1, length(Z)), exact = NULL,
+                                           p = propensity, caliper_low = 0.02, k = NULL,
+                                           method = '0/1', penalty = 100)
+
+dist_list_2 = revert_dist_list_cpp(n_t, n_c, dist_list_2$start_n, dist_list_2$end_n, dist_list_2$d)
+names(dist_list_2) = c('start_n', 'end_n', 'd')
+
+matching_output = match_2C_list(Z, dt_Rouse_fixed_ratio, dist_list_pscore, dist_list_2, 
+                                  lambda = 1, controls = 2)
+head(matching_output$matched_data_in_order, 12)
+```
