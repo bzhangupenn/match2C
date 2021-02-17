@@ -17,10 +17,6 @@ revert_dist_list_cpp(n_t, n_c, startn, endn, d)
 
 \item{d}{Vector of cost associated with edges}
 }
-\value{
-The function returns a list of three vectors:
-        startn, endn, and cost.
-}
 \description{
 Revert a treated-to-control distance list.
 }

@@ -8,12 +8,8 @@
 #' @param startn Vector of starting nodes of edges
 #' @param endn Vector of ending nodes of edges
 #' @param d Vector of cost associated with edges
-#'
-#' @return The function returns a list of three vectors:
-#'         startn, endn, and cost.
-#'
 #' @export
 revert_dist_list_cpp <- function(n_t, n_c, startn, endn, d) {
-    .Call('_match2C_revert_dist_list_cpp', PACKAGE = 'match2C', n_t, n_c, startn, endn, d)
+    .Call(`_match2C_revert_dist_list_cpp`, n_t, n_c, startn, endn, d)
 }
 

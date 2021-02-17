@@ -80,36 +80,36 @@ very large, the network will first minimize the second part of network and then 
 }
 \examples{
 \dontrun{
-# To run the following code, one needs to first install
-# and load the package optmatch.
+To run the following code, one needs to first install
+and load the package optmatch.
 
 # We first prepare the input X, Z, propensity score
 
-attach(dt_Rouse)
-X = cbind(female,black,bytest,dadeduc,momeduc,fincome)
-Z = IV
-propensity = glm(IV~female+black+bytest+dadeduc+momeduc+fincome,
-family=binomial)$fitted.values
-n_t = sum(Z)
-n_c = length(Z) - n_t
-dt_Rouse$propensity = propensity
-detach(dt_Rouse)
+#attach(dt_Rouse)
+#X = cbind(female,black,bytest,dadeduc,momeduc,fincome)
+#Z = IV
+#propensity = glm(IV~female+black+bytest+dadeduc+momeduc+fincome,
+#family=binomial)$fitted.values
+#n_t = sum(Z)
+#n_c = length(Z) - n_t
+#dt_Rouse$propensity = propensity
+#detach(dt_Rouse)
 
 # Next, we use the match_on function in optmatch
-# to create two treated-by-control distance matrices.
+to create two treated-by-control distance matrices.
 
-library(optmatch)
-dist_mat_1 = match_on(IV~female+black+bytest+dadeduc+momeduc+fincome,
-method = 'mahalanobis', data = dt_Rouse)
+#library(optmatch)
+# dist_mat_1 = match_on(IV~female+black+bytest+dadeduc+momeduc+fincome,
+# method = 'mahalanobis', data = dt_Rouse)
 
-dist_mat_2 = match_on(IV ~ female, method = 'euclidean', data = dt_Rouse)
+# dist_mat_2 = match_on(IV ~ female, method = 'euclidean', data = dt_Rouse)
 
 
 # Feed two distance matrices to the function match_2C_mat without caliper
 # and a large penalty lambda to enforce (near-)fine balance.
 
-matching_output = match_2C_mat(Z, dt_Rouse, dist_mat_1, dist_mat_2,
-                              lambda = 10000, p_1 = NULL, p_2 = NULL)
+#matching_output = match_2C_mat(Z, dt_Rouse, dist_mat_1, dist_mat_2,
+#                               lambda = 10000, p_1 = NULL, p_2 = NULL)
 
 # For more examples, please consult the RMarkdown tutorial.
 }

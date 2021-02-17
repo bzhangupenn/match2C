@@ -50,30 +50,3 @@ For more information on list representations of a distance matrix, see the
 documentation of the function ``create_list_from_mat'' and ``create_list_from_scratch''.
 Note that by setting dist_list_2 = NULL, the usual matching framework is restored.
 }
-\examples{
-
-# We first prepare the input X, Z, propensity score
-
-attach(dt_Rouse)
-X = cbind(female,black,bytest,dadeduc,momeduc,fincome)
-Z = IV
-propensity = glm(IV~female+black+bytest+dadeduc+momeduc+fincome,
-                family=binomial)$fitted.values
-detach(dt_Rouse)
-
-# We next create two list representations of distance matrices
-# using function create_list_from_scratch. See its focumentation
-# for more details on using different methods and calipers.
-
-# Caveate: please switch the role of treatment and control when
-# construcitg the second list. Simply let Z = 1 - Z.
-
-dist_list_pscore = create_list_from_scratch(Z, X, exact = NULL,
-                   p = propensity, caliper_low = 0.03, k = 100,
-                   method = 'maha')
-matching_output = match_2C_list(Z, dt_Rouse,
-                 dist_list_pscore)
-
-# Please refer to the RMarkdown tutorial for more examples.
-
-}

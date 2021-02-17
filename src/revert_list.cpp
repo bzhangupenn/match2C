@@ -8,13 +8,11 @@ using namespace Rcpp;
 //' @param startn Vector of starting nodes of edges
 //' @param endn Vector of ending nodes of edges
 //' @param d Vector of cost associated with edges
-//'
-//' @return The function returns a list of three vectors:
-//'         startn, endn, and cost.
-//'
 //' @export
 // [[Rcpp::export]]
-List revert_dist_list_cpp(int n_t, int n_c, NumericVector startn, NumericVector endn, NumericVector d) {
+List revert_dist_list_cpp(int n_t, int n_c, std::vector<int> startn,
+                                            std::vector<int> endn,
+                                            std::vector<double> d) {
 
   int num_edge = startn.size();
   std::vector<int> start_n_new;

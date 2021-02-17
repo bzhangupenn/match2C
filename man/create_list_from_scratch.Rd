@@ -35,7 +35,7 @@ create_list_from_scratch(
 
 \item{caliper_high}{Size of caliper high.}
 
-\item{k}{Connect each treated to the nearest k controls. See detaisl section.}
+\item{k}{Connect each treated to the nearest k controls. See details section.}
 
 \item{alpha}{Tuning parameter.}
 
@@ -61,7 +61,7 @@ Currently, there are 4 methods implemented in this function: 'maha' (Mahalanobis
 are the same), 'Hamming' (Hamming distance).
 
 User can also supply their own distance function by setting method = 'other' and
-using the argument dist_func. ``dist_func'' is a user-supplied distance
+using the argument ``dist_func''. ``dist_func'' is a user-supplied distance
 function in the following format:
 dist_func(controls, treated), where treated is a length-p vector
 of covaraites and controls is a n_c-by-p matrix of covariates.
@@ -95,6 +95,6 @@ dist_list_pscore_maha = create_list_from_scratch(Z, X, p = propensity,
 
 
 # More examples, including how to use a user-supplied
-# distance function, can be found in the accompanying RMarkdown tutorial.
+# distance function, can be found in the vignette.
 
 }

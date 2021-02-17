@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Bo Zhang, University of Pennsylvania" />
+
+
+<title>Tutorial for R Package match2C</title>
+
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Tutorial for R Package match2C</h1>
+<h4 class="author">Bo Zhang, University of Pennsylvania</h4>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">options</span>(<span class="dt">digits=</span><span class="dv">4</span>)</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">library</span>(match2C)</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">library</span>(ggplot2)</span></code></pre></div>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<div id="preparation-of-data" class="section level2">
+<h2>Preparation of data</h2>
+<p>This file serves as an introduction to the <strong>R</strong> package <strong>match2C</strong>. We first load the package and an illustrative dataset from Rouse (1995). For the purpose of illustration, we will mostly work with 6 covariates: two nominal (black and female), two ordinal (father’s education and mother’s education), and two continuous (family income and test score). Treatment is an instrumental-variable-defined exposure, equal to <span class="math inline">\(1\)</span> if the subject is doubly encouraged, meaning the both the excess travel time and excess four-year college tuition are larger than the median, and to be <span class="math inline">\(0\)</span> if the subject is doubly discouraged. There are <span class="math inline">\(1122\)</span> subjects that are doubly encouraged (treated), and <span class="math inline">\(1915\)</span> that are doubly discouraged (control).</p>
+<p>Below, we specify covariates to be matched (X) and the exposure (Z), and fit a propensity score model.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">attach</span>(dt_Rouse)</span>
+<span id="cb2-2"><a href="#cb2-2"></a>X =<span class="st"> </span><span class="kw">cbind</span>(female,black,bytest,dadeduc,momeduc,fincome) <span class="co"># covariates to be matched</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a>Z =<span class="st"> </span>IV <span class="co"># IV-defined exposure in this dataset</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a></span>
+<span id="cb2-5"><a href="#cb2-5"></a><span class="co"># Fit a propensity score model</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>propensity =<span class="st"> </span><span class="kw">glm</span>(IV<span class="op">~</span>female<span class="op">+</span>black<span class="op">+</span>bytest<span class="op">+</span>dadeduc<span class="op">+</span>momeduc<span class="op">+</span>fincome,</span>
+<span id="cb2-7"><a href="#cb2-7"></a>                 <span class="dt">family=</span>binomial)<span class="op">$</span>fitted.values</span>
+<span id="cb2-8"><a href="#cb2-8"></a></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="co"># Number of treated and control</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a>n_t =<span class="st"> </span><span class="kw">sum</span>(Z) <span class="co"># 1,122 treated</span></span>
+<span id="cb2-11"><a href="#cb2-11"></a>n_c =<span class="st"> </span><span class="kw">length</span>(Z) <span class="op">-</span><span class="st"> </span>n_t <span class="co"># 1,915 control</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a></span>
+<span id="cb2-13"><a href="#cb2-13"></a>dt_Rouse<span class="op">$</span>propensity =<span class="st"> </span>propensity</span>
+<span id="cb2-14"><a href="#cb2-14"></a><span class="kw">detach</span>(dt_Rouse)</span></code></pre></div>
+</div>
+<div id="glossary-of-matching-terms" class="section level2">
+<h2>Glossary of Matching Terms</h2>
+<p>We define some useful statistical matching terminologies:</p>
+<ul>
+<li><p><strong>Bipartite Matching</strong>: Matching control subjects to treated subjects based on a binary treatment status.</p></li>
+<li><p><strong>Pair Matching</strong>: Matching one control subject to one treated subject.</p></li>
+<li><p><strong>Optimal Matching</strong>: Matching control subjects to treated subjects such that some properly defined sum of total distances is minimized.</p></li>
+<li><p><strong>Propensity Score</strong>: The propensity score is the conditional probability of assignment to a particular treatment given a vector of observed covariates (Rosenbaum and Rubin, 1983).</p></li>
+<li><p><strong>Mahalanobis Distance</strong>: A multivariate measure of covariate distance between units in a sample (Mahalanobis, 1936). The squared Mahalanobis distance is equal to the difference in covariate values of treated units and matched control units, divided by the covariate’s standard deviation. Mahalanobis distance takes into account the correlation structure among covariates. The distance is zero if two units have the same value for all covariates and increases as two units become more dissimilar.</p></li>
+<li><p><strong>Exact Matching</strong>: Matching cases to controls requiring the same value of a nominal covariate.</p></li>
+<li><p><strong>Fine Balance</strong>: A matching technique that balances exactly the marginal distribution of one nominal variable or the joint distribution of several nominal variables in the treated and control groups after matching (Rosenbaum et al., 2007; Yu et al., 2020).</p></li>
+</ul>
+<p>For more details on statistical matching and statistical inference procedures after matching, see <em>Observational Studies</em> (Rosenbaum, 2002) and <em>Design of Observational Studies</em> (Rosenbaum, 2010).</p>
+</div>
+</div>
+<div id="statistical-matching-workflow-match-check-blance-and-possibly-iterate" class="section level1">
+<h1>Statistical Matching Workflow: Match, Check Blance, and (Possibly) Iterate</h1>
+<div id="an-overview-of-the-family-of-three-matching-functions-match_2c-match_2c_mat-and-match_2c_list" class="section level2">
+<h2>An Overview of the Family of Three Matching Functions <em>match_2C</em>, <em>match_2C_mat</em>, and <em>match_2C_list</em></h2>
+<p>In the pacakge <strong>match2C</strong>, three functions are primarily responsible for the main task statistical matching. These three functions are <em>match_2C</em>, <em>match_2C_mat</em>, and <em>match_2C_list</em>. We will more closely examine their differences in later sections and illustrate their usage with numerous examples. In this section we give a high-level outline of what each of them does and how they are different from each other. In short, the three functions have the same output format (details in the next section), but they are primarily different in their inputs.</p>
+<p>Function <em>match_2C_mat</em> takes as input at least one distance matrix. A distance matrix is a n_t-by-b_c matrix whose ij-th entry encodes a measure of distance (or similarity) between the i-th treated and the j-th control subject. Hence, function <em>match_2C_mat</em> is most handy to use for users who are most familiar with constructing distance matrices and working with distance matrices. One commonly-used way to construct a distance matrix is to use the function <em>match_on</em> in the package <strong>optmatch</strong> (Hansen, 2007).</p>
+<p>Function <em>match_2C_list</em> is similar to <em>match_2C_mat</em> except that it requires at least one distance list as input. A list representation of a treatment-by-control distance matrix consists of the following arguments:</p>
+<ul>
+<li><em>start_n</em>: a vector containing the node numbers of the start nodes of each arc in the network.</li>
+<li><em>end_n</em>: a vector containing the node numbers of the end nodes of each arc in the network.</li>
+<li><em>d</em>: a vector containing the integer cost of each arc in the network.</li>
+</ul>
+<p>Node 1,2,…,n_t correspond to <em>n_t</em> treatment nodes; n_t + 1, n_t + 2, …, n_t + n_c correspond to <em>n_c</em> control nodes. Note that <em>start_n</em>, <em>end_n</em>, and <em>d</em> have the same lengths, all of which equal to the number of edges. Function <em>create_list_from_scratch</em> and <em>create_list_from_mat</em> allow users to construct a (possibly sparse) distance list with a possibly user-specified distance measure. We will discuss how to construct distance lists in later sections.</p>
+<p>Function <em>match_2C</em> is a wrap-up of <em>match_2C_list</em> with pre-specified distance structures. On the left, a Mahalanobis distance is adopted; on the right, an L-1 distance between 10 propensity score bins is used. A large penalty is applied so that the algorithm prioritizes balancing the propensity score distributions in the treated and matched control groups, followed by minimizing the sum of within-matched-pair Mahalanobis distances. Function <em>match_2C</em> further allows fine-balancing the joint distribution of a few key covariates. The hierarchy goes in the order of fine-balance &gt;&gt; propensity score distribution &gt;&gt; within-pair Mahalanobis distance.</p>
+</div>
+<div id="object-returned-by-match_2c-match_2c_mat-and-match_2c_list" class="section level2">
+<h2>Object Returned by <em>match_2C</em>, <em>match_2C_mat</em>, and <em>match_2C_list</em></h2>
+<p>Objects returned by the family of matching functions <em>match_2C</em>, <em>match_2C_mat</em>, and <em>match_2C_list</em> are the same in format: a list of the following three elements:</p>
+<ul>
+<li><p><em>feasible</em>: 0/1 depending on the feasibility of the matching problem;</p></li>
+<li><p><em>data_with_matched_set_ind</em>: a data frame that is the same as the original data frame, except that a column called <em>matched_set</em> and a column called <em>distance</em> are added to it. Variable <em>matched_set</em> assigns 1,2,…,n_t to each matched set, and NA to controls not matched to any treated. Variable <em>distance</em> records the cotnrol-to-treated distance in each matched pair, and assigns NA to all treated and controls that are left unmatched. If matching is not feasible, NULL will be returned;</p></li>
+<li><p><em>matched_data_in_order</em>: a data frame organized in the order of matched sets and otherwise the same as <em>data_with_matched_set_ind</em>. Null will be returned if the matching is unfeasible.</p></li>
+</ul>
+<p>Let’s take a look at an example output returned by the function <em>match_2C_list</em>. The matching problem is indeed feasible:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="co"># Check feasibility</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>matching_output_example<span class="op">$</span>feasible</span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div>
+<p>Let’s take a look at the data frame <em>data_with_matched_set_ind</em>. Note that it is indeed the same as the original dataset except that a column <em>matched_set</em> and a column <em>distance</em> are appended. Observe that the first six instances belong to <span class="math inline">\(6\)</span> different matched sets; therefore <em>matched_set</em> is from <span class="math inline">\(1\)</span> to <span class="math inline">\(6\)</span>. The first six instances are all treated subjects so <em>distance</em> is NA.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="co"># Check the original dataset with two new columns</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">head</span>(matching_output_example<span class="op">$</span>data_with_matched_set_ind, <span class="dv">6</span>)</span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="co">#&gt;   educ86 twoyr female black hispanic bytest dadsome dadcoll momsome momcoll</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="co">#&gt; 1     12     1      1     1        0  40.60       0       0       0       0</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="co">#&gt; 2     14     1      1     0        0  46.28       0       0       0       0</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="co">#&gt; 3     12     1      1     0        0  60.40       0       0       0       0</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="co">#&gt; 4     14     1      1     0        0  60.93       0       0       1       0</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="co">#&gt; 5     16     1      1     0        0  45.75       0       0       0       0</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="co">#&gt; 6     12     1      0     0        0  60.22       0       1       0       0</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a><span class="co">#&gt;   fincome fincmiss IV dadneither momneither dadeduc momeduc test_quartile</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a><span class="co">#&gt; 1    9500        0  1          0          0       0       0             1</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a><span class="co">#&gt; 2   18000        0  1          0          0       0       0             1</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a><span class="co">#&gt; 3   22500        0  1          1          0       1       0             4</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a><span class="co">#&gt; 4   22500        0  1          0          0       0       2             4</span></span>
+<span id="cb4-15"><a href="#cb4-15"></a><span class="co">#&gt; 5       0        1  1          1          0       1       0             1</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a><span class="co">#&gt; 6   62000        0  1          0          0       3       0             4</span></span>
+<span id="cb4-17"><a href="#cb4-17"></a><span class="co">#&gt;   income_quartile propensity matched_set distance</span></span>
+<span id="cb4-18"><a href="#cb4-18"></a><span class="co">#&gt; 1               1     0.4157           1       NA</span></span>
+<span id="cb4-19"><a href="#cb4-19"></a><span class="co">#&gt; 2               2     0.4083           2       NA</span></span>
+<span id="cb4-20"><a href="#cb4-20"></a><span class="co">#&gt; 3               3     0.3525           3       NA</span></span>
+<span id="cb4-21"><a href="#cb4-21"></a><span class="co">#&gt; 4               3     0.3465           4       NA</span></span>
+<span id="cb4-22"><a href="#cb4-22"></a><span class="co">#&gt; 5               0     0.4281           5       NA</span></span>
+<span id="cb4-23"><a href="#cb4-23"></a><span class="co">#&gt; 6               4     0.3055           6       NA</span></span></code></pre></div>
+<p>Finally, <em>matched_data_in_order</em> is <em>data_with_matched_set_ind</em> organized in the order of matched sets. Note that the first <span class="math inline">\(2\)</span> subjects belong to the same matched set; the next two subjects belong to the second matched set, and etc.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a><span class="co"># Check dataframe organized in matched set indices</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">head</span>(matching_output_example<span class="op">$</span>matched_data_in_order, <span class="dv">6</span>)</span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="co">#&gt;      educ86 twoyr female black hispanic bytest dadsome dadcoll momsome momcoll</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="co">#&gt; 1        12     1      1     1        0  40.60       0       0       0       0</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="co">#&gt; 397      13     1      1     1        0  42.72       0       0       0       0</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="co">#&gt; 2        14     1      1     0        0  46.28       0       0       0       0</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="co">#&gt; 565      12     1      1     0        0  45.74       0       0       0       0</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="co">#&gt; 3        12     1      1     0        0  60.40       0       0       0       0</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="co">#&gt; 1312     15     0      1     0        0  58.61       1       0       0       0</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a><span class="co">#&gt;      fincome fincmiss IV dadneither momneither dadeduc momeduc test_quartile</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="co">#&gt; 1       9500        0  1          0          0       0       0             1</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a><span class="co">#&gt; 397     3500        0  0          1          0       1       0             1</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a><span class="co">#&gt; 2      18000        0  1          0          0       0       0             1</span></span>
+<span id="cb5-14"><a href="#cb5-14"></a><span class="co">#&gt; 565    22500        0  0          0          0       0       0             1</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a><span class="co">#&gt; 3      22500        0  1          1          0       1       0             4</span></span>
+<span id="cb5-16"><a href="#cb5-16"></a><span class="co">#&gt; 1312   31500        0  0          0          0       2       0             3</span></span>
+<span id="cb5-17"><a href="#cb5-17"></a><span class="co">#&gt;      income_quartile propensity matched_set distance</span></span>
+<span id="cb5-18"><a href="#cb5-18"></a><span class="co">#&gt; 1                  1     0.4157           1       NA</span></span>
+<span id="cb5-19"><a href="#cb5-19"></a><span class="co">#&gt; 397                1     0.4135           1   1.9977</span></span>
+<span id="cb5-20"><a href="#cb5-20"></a><span class="co">#&gt; 2                  2     0.4083           2       NA</span></span>
+<span id="cb5-21"><a href="#cb5-21"></a><span class="co">#&gt; 565                3     0.4058           2   0.3605</span></span>
+<span id="cb5-22"><a href="#cb5-22"></a><span class="co">#&gt; 3                  3     0.3525           3       NA</span></span>
+<span id="cb5-23"><a href="#cb5-23"></a><span class="co">#&gt; 1312               3     0.3501           3   0.8523</span></span></code></pre></div>
+</div>
+<div id="checking-balance" class="section level2">
+<h2>Checking Balance</h2>
+<p>Statistical matching belongs to the design stage of an observational study. The ultimate goal of statistical matching is to embed observational data into an approximate randomized controlled trial and the matching process should always be conducted without access to the outcome data. Not looking at the outcome at the design stage means researchers could in principle keep adjusting their matched design until some pre-specified design goal is achieved. A rule of thumb is that the standardized differences of each covariate, i.e., difference in means after matching divided by pooled standard error before matching, is less than 0.1.</p>
+<p>Function <em>check_balance</em> in the package provides simple balance check and visualization. In the code chunk below, <em>matching_output_example</em> is an object returned by the family of matching functions <em>match_2C_list</em>/<em>match_2C</em>/<em>match_2C_mat</em> (we give details on how to use these functions later). Function <em>check_balance</em> then takes as input a vector of treatment status Z, an object returned by match_2C (or match_2C_mat or match_2C_list), a vector of covariate names for which we would like to check balance, and output a balance table.</p>
+<p>There are six columns of the balance table:</p>
+<ol style="list-style-type: decimal">
+<li><p>Mean covariate values in the treated group (Z = 1) <em>before</em> matching.</p></li>
+<li><p>Mean covariate values in the control group (Z = 0) <em>before</em> matching.</p></li>
+<li><p>Standardized differences <em>before</em> matching.</p></li>
+<li><p>Mean covariate values in the treated group (Z = 1) <em>after</em> matching.</p></li>
+<li><p>Mean covariate values in the control group (Z = 0) <em>after</em> matching.</p></li>
+<li><p>Standardized differences <em>after</em> matching.</p></li>
+</ol>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>tb_example =<span class="st"> </span><span class="kw">check_balance</span>(Z, matching_output_example, </span>
+<span id="cb6-2"><a href="#cb6-2"></a>              <span class="dt">cov_list =</span> <span class="kw">c</span>(<span class="st">&#39;female&#39;</span>, <span class="st">&#39;black&#39;</span>, <span class="st">&#39;bytest&#39;</span>, <span class="st">&#39;fincome&#39;</span>, </span>
+<span id="cb6-3"><a href="#cb6-3"></a>                           <span class="st">&#39;dadeduc&#39;</span>, <span class="st">&#39;momeduc&#39;</span>, <span class="st">&#39;propensity&#39;</span>),</span>
+<span id="cb6-4"><a href="#cb6-4"></a>              <span class="dt">plot_propens =</span> <span class="ot">FALSE</span>)</span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="kw">print</span>(tb_example, <span class="dt">digits =</span> <span class="dv">4</span>)</span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="co">#&gt;            Before (Z = 1) Before (Z = 0) Std. Diff After (Z = 1) After (Z = 0)</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="co">#&gt; female          5.802e-01      5.577e-01   0.03214     5.802e-01     5.802e-01</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="co">#&gt; black           1.907e-01      1.849e-01   0.01063     1.907e-01     1.809e-01</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="co">#&gt; bytest          5.188e+01      5.304e+01  -0.09760     5.188e+01     5.203e+01</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a><span class="co">#&gt; fincome         2.163e+04      2.344e+04  -0.07217     2.163e+04     2.148e+04</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="co">#&gt; dadeduc         1.102e+00      1.171e+00  -0.04092     1.102e+00     1.111e+00</span></span>
+<span id="cb6-12"><a href="#cb6-12"></a><span class="co">#&gt; momeduc         9.349e-01      9.958e-01  -0.03750     9.349e-01     9.118e-01</span></span>
+<span id="cb6-13"><a href="#cb6-13"></a><span class="co">#&gt; propensity      3.733e-01      3.672e-01   0.11463     3.733e-01     3.731e-01</span></span>
+<span id="cb6-14"><a href="#cb6-14"></a><span class="co">#&gt;            Std. Diff</span></span>
+<span id="cb6-15"><a href="#cb6-15"></a><span class="co">#&gt; female      0.000000</span></span>
+<span id="cb6-16"><a href="#cb6-16"></a><span class="co">#&gt; black       0.017745</span></span>
+<span id="cb6-17"><a href="#cb6-17"></a><span class="co">#&gt; bytest     -0.012513</span></span>
+<span id="cb6-18"><a href="#cb6-18"></a><span class="co">#&gt; fincome     0.006009</span></span>
+<span id="cb6-19"><a href="#cb6-19"></a><span class="co">#&gt; dadeduc    -0.005274</span></span>
+<span id="cb6-20"><a href="#cb6-20"></a><span class="co">#&gt; momeduc     0.014273</span></span>
+<span id="cb6-21"><a href="#cb6-21"></a><span class="co">#&gt; propensity  0.002639</span></span></code></pre></div>
+<p>Function <em>check_balance</em> may also plot the distribution of the propensity score among the treated subjects, all conrol subjects, and the matched control subjects by setting option <em>plot_propens = TRUE</em> and supplying the option <em>propens</em> with estimated propensity scores as shown below. In the figure below, the blue curve corresponds to the propensity score distribution among 1,122 treated subjects, the red curve among 1,915 control subjects, and the green curve among 1,122 matched controls. It is evident that after matching, the propensity score distribution aligns better with that of the treated subjects.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>tb_example =<span class="st"> </span><span class="kw">check_balance</span>(Z, matching_output_example, </span>
+<span id="cb7-2"><a href="#cb7-2"></a>              <span class="dt">cov_list =</span> <span class="kw">c</span>(<span class="st">&#39;female&#39;</span>, <span class="st">&#39;black&#39;</span>, <span class="st">&#39;bytest&#39;</span>, <span class="st">&#39;fincome&#39;</span>, </span>
+<span id="cb7-3"><a href="#cb7-3"></a>                           <span class="st">&#39;dadeduc&#39;</span>, <span class="st">&#39;momeduc&#39;</span>, <span class="st">&#39;propensity&#39;</span>),</span>
+<span id="cb7-4"><a href="#cb7-4"></a>              <span class="dt">plot_propens =</span> <span class="ot">TRUE</span>, <span class="dt">propens =</span> propensity)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+</div>
+</div>
+<div id="introducing-the-main-function-match_2c" class="section level1">
+<h1>Introducing the Main Function <em>match_2C</em></h1>
+<div id="a-basic-match-with-minimal-input" class="section level2">
+<h2>A Basic Match with Minimal Input</h2>
+<p>Function <em>match_2C</em> is a wrapper function of <em>match_2C_list</em> with a carefully-chosen distance structure. Compare to <em>match_2C_list</em> and <em>match_2C_mat</em>, <em>match_2C</em> is less flexible; however, it requires minimal input from the users’ side, works well in most cases, and therefore is of primary interest to most users.</p>
+<p>The minimal input to function <em>match_2C</em> is the following:</p>
+<ol style="list-style-type: decimal">
+<li>treatment indicator vector,</li>
+<li>a matrix of covariates to be matched,</li>
+<li>a vector of estimated propensity score, and</li>
+<li>the original dataset to which match sets information is attached.</li>
+</ol>
+<p>By default, <em>match_2C</em> performs a statistical matching that:</p>
+<ol style="list-style-type: decimal">
+<li>maximally balances the marginal distribution of the propensity score in the treated and matched control group, and</li>
+<li>subject to 1, minimizes the within-matched-pair Mahalanobis distances.</li>
+</ol>
+<p>The code chunk below displays how to perform a basic match using function <em>match_2C</em> with minimal input, and then check the balance of such a match. The balance is very good and the propensity score distributions in the treated and matched control group almost perfectly align with each other.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="co"># Perform a matching with minimal input</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>matching_output =<span class="st"> </span><span class="kw">match_2C</span>(<span class="dt">Z =</span> Z, <span class="dt">X =</span> X, </span>
+<span id="cb8-3"><a href="#cb8-3"></a>                           <span class="dt">propensity =</span> propensity, </span>
+<span id="cb8-4"><a href="#cb8-4"></a>                           <span class="dt">dataset =</span> dt_Rouse)</span>
+<span id="cb8-5"><a href="#cb8-5"></a>tb =<span class="st"> </span><span class="kw">check_balance</span>(Z, matching_output, </span>
+<span id="cb8-6"><a href="#cb8-6"></a>                   <span class="dt">cov_list =</span> <span class="kw">c</span>(<span class="st">&#39;female&#39;</span>, <span class="st">&#39;black&#39;</span>, <span class="st">&#39;bytest&#39;</span>, <span class="st">&#39;fincome&#39;</span>, </span>
+<span id="cb8-7"><a href="#cb8-7"></a>                                <span class="st">&#39;dadeduc&#39;</span>, <span class="st">&#39;momeduc&#39;</span>, <span class="st">&#39;propensity&#39;</span>),</span>
+<span id="cb8-8"><a href="#cb8-8"></a>                   <span class="dt">plot_propens =</span> <span class="ot">TRUE</span>, <span class="dt">propens =</span> propensity)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">print</span>(tb, <span class="dt">digits =</span> <span class="dv">4</span>)</span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="co">#&gt;            Before (Z = 1) Before (Z = 0) Std. Diff After (Z = 1) After (Z = 0)</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="co">#&gt; female          5.802e-01      5.577e-01   0.03214     5.802e-01     5.802e-01</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="co">#&gt; black           1.907e-01      1.849e-01   0.01063     1.907e-01     1.907e-01</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="co">#&gt; bytest          5.188e+01      5.304e+01  -0.09760     5.188e+01     5.202e+01</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="co">#&gt; fincome         2.163e+04      2.344e+04  -0.07217     2.163e+04     2.113e+04</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="co">#&gt; dadeduc         1.102e+00      1.171e+00  -0.04092     1.102e+00     1.092e+00</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="co">#&gt; momeduc         9.349e-01      9.958e-01  -0.03750     9.349e-01     9.260e-01</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="co">#&gt; propensity      3.733e-01      3.672e-01   0.11463     3.733e-01     3.733e-01</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a><span class="co">#&gt;             Std. Diff</span></span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="co">#&gt; female      0.000e+00</span></span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="co">#&gt; black       0.000e+00</span></span>
+<span id="cb9-13"><a href="#cb9-13"></a><span class="co">#&gt; bytest     -1.174e-02</span></span>
+<span id="cb9-14"><a href="#cb9-14"></a><span class="co">#&gt; fincome     1.997e-02</span></span>
+<span id="cb9-15"><a href="#cb9-15"></a><span class="co">#&gt; dadeduc     5.801e-03</span></span>
+<span id="cb9-16"><a href="#cb9-16"></a><span class="co">#&gt; momeduc     5.489e-03</span></span>
+<span id="cb9-17"><a href="#cb9-17"></a><span class="co">#&gt; propensity -9.043e-05</span></span></code></pre></div>
+</div>
+<div id="further-incorporating-fine-balancing-constraints" class="section level2">
+<h2>Further Incorporating Fine Balancing Constraints</h2>
+<p>Function <em>match_2C</em> also allows incorporating the (near-)fine balancing constraints. (Near-)fine balance refers to maximally balancing the marginal distribution of a nominal variable, or more generally the joint distribution of a few nominal variables, in the treated and matched control groups. Option <em>fb</em> in the function <em>match_2C</em> serves this purpose. Once the fine balance is turned on, <em>match_2C</em> then performs a statistical matching that:</p>
+<ol style="list-style-type: decimal">
+<li>maximally balances the marginal distribution of nominal levels specified in the option <em>fb</em>,</li>
+<li>subject to 1. maximally balances the marginal distribution of the propensity score in the treated and matched control group, and</li>
+<li>subject to 2, minimizes the within-matched-pair Mahalanobis distances.</li>
+</ol>
+<p>The code chunk below builds upon the last match by further requiring fine balancing the nominal variable <em>dadeduc</em>:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="co"># Perform a matching with fine balance</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>matching_output2 =<span class="st"> </span><span class="kw">match_2C</span>(<span class="dt">Z =</span> Z, <span class="dt">X =</span> X, </span>
+<span id="cb10-3"><a href="#cb10-3"></a>                            <span class="dt">propensity =</span> propensity, </span>
+<span id="cb10-4"><a href="#cb10-4"></a>                            <span class="dt">dataset =</span> dt_Rouse,</span>
+<span id="cb10-5"><a href="#cb10-5"></a>                            <span class="dt">fb_var =</span> <span class="kw">c</span>(<span class="st">&#39;dadeduc&#39;</span>))</span></code></pre></div>
+<p>We examine the balance and the variable <em>dadeduc</em> is indeed finely balanced.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a><span class="co"># Perform a matching with fine balance</span></span>
+<span id="cb11-2"><a href="#cb11-2"></a>tb2 =<span class="st"> </span><span class="kw">check_balance</span>(Z, matching_output2, </span>
+<span id="cb11-3"><a href="#cb11-3"></a>                   <span class="dt">cov_list =</span> <span class="kw">c</span>(<span class="st">&#39;female&#39;</span>, <span class="st">&#39;black&#39;</span>, <span class="st">&#39;bytest&#39;</span>, <span class="st">&#39;fincome&#39;</span>, </span>
+<span id="cb11-4"><a href="#cb11-4"></a>                                <span class="st">&#39;dadeduc&#39;</span>, <span class="st">&#39;momeduc&#39;</span>, <span class="st">&#39;propensity&#39;</span>),</span>
+<span id="cb11-5"><a href="#cb11-5"></a>                   <span class="dt">plot_propens =</span> <span class="ot">TRUE</span>, <span class="dt">propens =</span> propensity)</span></code></pre></div>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAnAAAAGcCAMAAABuo231AAABcVBMVEUAAAAAADoAAGYAOjoAOmYAOpAAZpAAZrYAujgzMzM6AAA6OgA6Ojo6OmY6ZmY6ZpA6ZrY6kLY6kNtNTU1NTW5NTY5Nbm5Nbo5NbqtNjshhnP9mAABmADpmOgBmOjpmOmZmZgBmZjpmZmZmZpBmkGZmkJBmkLZmkNtmtrZmtttmtv9uTU1ubm5ubo5ujqtujshuq8huq+SOTU2Obk2Oq8iOyOSOyP+QOgCQZjqQZmaQZpCQkJCQkLaQtraQttuQ29uQ2/+rbk2ryOSr5P+2ZgC2Zjq2ZpC2kDq2kGa2kJC2tma2tra2ttu225C229u22/+2/7a2/9u2///Ijk3Ijm7Iq27Iq47I5P/I/+TI///bkDrbkGbbtmbbtpDbtrbb25Db27bb29vb2//b/9vb///kq27kyI7kyKvk5OTk5P/k/+Tk///r6+v4dm3/tmb/yI7/25D/27b/29v/5Kv/5Mj/5OT//7b//8j//9v//+T///+weUq9AAAACXBIWXMAAA7DAAAOwwHHb6hkAAAgAElEQVR4nO2djX8cxXnHV5apxRmC0blxOQUKpiGxlOJWBmzahOD03EChuEFOaRU7ASqZpvj0EifSaf/67rztztvuzuzOzO7MPb/PB6zd27nfzOz3nnm92ywHgQIqGzoDoNUSAAcKKgAOFFQAHCioADhQUAFwoKAC4EBBBcCBggqAAwUVAAcKKgAOFFQAHCioADhQUAFwoKAC4EBBBcCBggqAAwUVAAcKKgAOFFQAHCioADhQUAFwoKAC4EBBBcCBggqAAwUVAAcKqhiAW+g0dKbyDZ2GzlQvzXRybQLAdRUA10kAXFcBcJ0EwHUVANdJsQDXfGIIKXwlAVzzCQdKCLjl3Wyb/nHpS/SfucPpz7WnG9/ECLj99bcfMo8Pr2632M7XPq7P48nkSv2LirqUqB24oopLvXDQKQ8JAXcyoZVgDVzdvXQAXHlj0L2SgFNs3QHXqUSOgdPnISHg9teukhs2LuAoRMXHIX7gsM622oNbfR7SAa6oh8fZJvprVMD9YLJJ/rr0JgCXewFu+cnVLHv54ckEVd/J5NJvHmTZZVSTT94oIvHLH9Hc0Oo/wiHgbCvbXt4rwsE1TVnMgDvKNs+2cHXKwC0fTLK1n5C/Hxd5W7+F/pqv/bIwvPwRDkNZger+pf94Pbv0kLuGvAk6XHtHyZchcK/exbdneffKHJf49N5VVAsPS1suewVwv5vgLKHaep3lND8tKu7aH7j756dEtsCVb89nVSmeXBD1DXuKtfM/ZsC9WRwUxVw+oI0/ZkoF7qdb+FXNh9wMOBQeyD2VgKMZ2uTyhmpsnjG/8va8iV7hrsFvsl/TZTEEbnMfl+hkso0zh1pW0ZbL3nztrbIKqO21nKX5QQWcpxLZA4ffXs0qnwflVfUNe2pefPYO8scTUnHI49WD5ee4OgrUEHZXch1w6DqUTI35RsDhajjC7y0Bt59dfpiTeLufrRWf/ycTVBFz9HdxL66w4L/P7nR5DXqTsy109vSu8kEwBe4Et6n7l77EwM1RKfPTLZQDZltmj2VpE1XL5S+K614v0hQnruGauVK9q5cSWQNH3p7LqqZ4ckGcA8dIKv6lwJHsnUyyTS6bGuC2hcs4GQG3j9KRuhSBW96ltb7J/ixMijzNsdERf3s2q8vxNfT2fKQtqClwy7s4slyh4ZfLLbblssdniXbnzraukNyiKxhwvkpkDxy+VVxW1eIpBXEO3D4L1XMGFuOMEnBG8ZeBK5Mpod4EuHLAvikDx/Vx2Z/4xTlt6rjbsy1dQ64r3nT9nW+VgpoCh42KFpUBt/z6sw/fyMo7wnfBqyxV8w8vHJCwzfXBfZXIHjjSgREmSqTiKQVxDRyJ6EhHQiSrzhOkVOBoYNtX21QT4FjngXVUWoBD/b2227P2MX4T2ve8LOfKGLij4n338X0u3h+NjNgHowG4sy12ny59eUSqpgU4ByXqBhyfVV3xpIK4Bq4ih41SS+BYU7mvB462N0fqsMEEuH02I1KkdhvhCn394dWs6kFRGQNXtCaoRc1pH27t5s8/+3a/NcJVHzvnEa6uRF0jHBchlOIpBQkFXHWexDDHwJHOW056Oto+HLmNfI9Hf3vkHg81OFEmn4yBy+eX/n2yTYCjN4t8/Pg+HP6byxLX4avrwzkvUTfg+KyqxVMKEkuEa9ktcsR6ficTAps8Sj3FC63CmI6/PX91UNafNKY7mVxGq6GPla6l0W6RfTLifAllhgCH3rwYs5E7QmzL7HFZKqrhVlFrv8YDiOzKAcqQOEp1XyLD3SIycFxWNcWTCxJLH64FuPJzhFbw9fNwqJaEWSv+9uBZqzKnwqxVNbslyhy4onDlZ33OujSlLZc9Lkv5g7JfVDsP57pEHYHjs6oWTymI+ob9NFdGqds0d/pR6pwBd4WlVxZE2oGjSwzE54X/0a000CUMfl6+uru/Q+GD1Z9uXj575WEuyRw4uo2FDBqKvBRDxD/gZhLbctnjs0SWA0iuT4uu+DV+pchPiboCx2VVUzy5IOob9pM6D7fNzvPzcIyw4l96SD5wR8oSN2zADCVD4PrJy0rDLdxjEIGTVhrQ4asHeJ2NTfyiZI8n6jQcKCV5W0tduykBJ66louUP3LT/GwPupUk1ewhKVv52ixyxfmLZRJLdIl/Qo9N7uB9SDRrQVoL1W8Bb2vI3aDjSLMPXipumAyUtD2upbNutOtysFwC3KvIxSkXzisUAuGn7qiwAblXkvg9HN9zhQaexALhVkYdBAxoNZOvqvGKTALhVUQxfogElJAAOFFQAHCioADhQUAFwoKAC4EBBBcCBggqAAwUVAAcKKgAOFFQAHCioADhQUAFwoKAC4EBBBcCBggqAAwUVAAcKKgAOFFQAHCioADhQUAFwoKAC4EBBBcCBggqAAwUVAAcKKgAOFFQAHCioADhQUAFwoKAC4EBBBcCBggqAAwUVAAcKKgAOFFQAHCioADhQUIUA7kXQSis8cPzBs2f2b2CfBFxG4wLAgUtQFwAOXIK6AHDgEtQFgAOXoC4AHLgEdQHgwCWoCwAHLkFdALgwLgsqvy61acbj4gC4w7/+b/LHd3em0xu/4l9Sz+QrCdyCEzqeYbl2aUgzHpf+wD2dUuAOp1j/WL2knsGWQibjrj4Tl4WkmSBXLs1pxuPSF7iL304pcM93pu8j/K7/C3tNPUMshUzGXX3tLo20dWEu8hrrCdzzO9MbdwhwhySSHVYBTT1DLIVMxl19bS5iS5rrcLNFLvIa6wnc3vX3/u8+Bu7iPglkz3f+5nvymnqGWgqZjLv6WlykoUIJ2EahrsRFXmM9gfvf7wuuKHAk0J3vsjGEeobuT3m2ImK40UOeNqYKuUFzGlD9Bw2Uq/NdEscYZrozKwkcO9LgJjK3MWRegykocBQ7/iDyBqLBRd+aFoQJr4jIbVi7GObMPsVIm9QcgKtxEed5OdxygUWUhGtYDZCLvMacAWfSh6OWQibjrr5aF218q3AqX30mXEBaXHMX45zZp4gAOBilVkmkdSw1eknACW1uM3KR15gz4GAejnPR8iZeTK/gXAyRi7zG3AEHKw3MRV6n1/HGiBNchIFsm4tVzuxTjB84fuX0fBdDtpprqVreZsrVdNJEOGcS5CKvMYfAcXtDKHAruVvEkDd6oeQya0cu8hqD/XCuXUTc6nlTruSvbxivRl5jAJxjF3PeTIjTIBd5jQFwbl1EhjYaeZMHs0zNxEVeYwCcUxfT/htVDXECchoX+5zZpwDguDT2KQK5WPJWT1xeH+QirzEAzqGLNW/tMU4NcpHXGADnzkWGx4A3BVIp9axc8K9SxF1jAJwzly685c/0Q9XqDWbyFpLIawyAc+XSibdcGdjy0hIXeY0BcI5ctLzNjFzqics1rWrkNQbAOXLpxlsFnDFxkdcYAOfGRVoY3TDkLeeWX2uukFvVyGsMgHPjgnkrkxjzlvMbTPRXyP24yGsMgHPishCAM+eNuVgQF3mNAXAuXOhmSpqkZQVV6yJvauIlEhd5jQFwDlwWAnA2vFUuTcSxfhxJEXeNAXD9XRgqxGVmwxvnYkpc5DUGwPV2KUHhgevgsmhvVjfy6GtsCOCG/rUBx6IDBiLanvZ4p+q9BPV53zEJIlxflyoqFS4W41OdS1OQY+8ceY0BcD1dOEDK+NbdZdGAHG1TI68xAK6fC49HB95UlwbkCHGR1xgA18uFZ4P9Jk1Pl3riyLtHXmMAXB+X3rxpXeqQIwPVuGsMgOvlwmEx68RbjUszcZYWtS6NKQA4Lo19Co/Akb+64VbvokeOTI1Ym4yoxgC4Pi4lEd2a00YXLXHOXepTAHBcGvsUXlxKIMrZXqcutcSZ/DCrsUtdCgCOS2OfwocL46EMb65daolz6lKTAoDj0tin8OBCaSh/oNeHSw1x1iFuHDWGBcB1dFF58+jCqVOjOooaIwLgurkQEnjcvMZRTu4mXxpTAHBcGvsUfoCTJkO89hRLdQlxY6gxKgCuk4uON59jYY64Z47WM1pSAHBcGvsUPsaPylK9x9k+jjiyNc4uxA1fY6UAuA4uet6CrNgy4GYN13dzkVIAcFwa+xROXWp4C7MnBbkAcFZKAjjd1rdAu+4AOEvFDlwdb8H2FdvPjKQI3PnulKp6lNsxOZHWk2jwvdeuogf75oT1csOqAHeYKnD6XRv+v4zIXGxDXIrAUV3cn35QHuxJqFFL/iA64Op5C/ntV8sQlzBw/KMD5SfzMkv+IDbgqg6cT5c6ZwE4TQ76u5QpIgFOeDbq+e5rWkv+IDLgqg6cTxe9KHHV9/vNQ1yywAkNajFmuP1oZ3r9vRLBF4mG/vJ3dy1K4IZyZ3/PhspEX7kF7njKP/yZjhmqc7EDx20RGcyeHeAQN0QuesopcGKAy/em736V59/tpPJE6EW1ZO/RpUGUOPy3VS8u1SZVfrq9/mzcwDXc6TDAsV8StunFpQqc/HR7InmwGitw/BZffy6N4pe4bPbFJQrcxX3tvFsiwNF73dCUBSgLv4oPwJ3vCm3n+S4BTRxJRA5cU9cpRFm6hbhEgTueivNue9MbxaDh6Y4wkogVuPYAF6YsEnErDVzVhTvfRY3r+R0yLSJ17KIEzoC3gMAR4sxDXLLAsVBGgMsvHu1Mpzd+JVvyBxEC59HFRF1CXFzAnf3oxw/t3Rss+YNIgDMJcKHK0iHERQbcVpatveKOuQiBo/d4o3myNVRZROLSA275ydUsc8hcfMAtjALcQMA1ZKiXi3USl3245aevu2MuOuAWZgEuXFmse3HRAVdo+YQy94V9TiRL/iAa4PL2eBKuLLZtaozA5Yi5NzBz7xzYZ4a35A8iAI7x1hbgAgOHiTMcNkQKXP71vUmGkbtlnxvOkj8YP3DizfXlYpGCB84wxEUJ3JN7JLx980lB3bZ9dipL/mD0wC2MA1zIsliGuPiAo40pHTTsZy/0aFUjBA790T4iDFkWIVsbbcRFBhyhLauGC2dbl760z09pyR+MHTix8fLlYpVCBa41xMUFHJr4zV7+SDizUsDhP9pb1LBlsQpxsQF3+SOxBT39rM/cSEzA2QS4wGURJmuSAs61YgOOHI4TOEZcS4iLGbjlN/Y5kSz5g3EDt7BpUUOXRQxxjcTFBZzQYzuZ9Om+EUv+YNTAydtr/bjYplBmpNsb1YiB6zdeIJb8QSTAmQS48GXh9xQ0hrh4gPvk5s2bb03WfnCT6Wq2OsBZBrjBgGsnLh7gTshaFq9N+5xIlvzBiIHjeDMKcAOUxXTcEA9w+YOXXrqaZesvMb3cc+UeWQ79awNmIqNA8jcOIcNmRy+aRRLihs6MkWz7cA4USYTjApzJnEhHl55lMRw3RBThCi0/fLt3VBMs+YPRAifzNvPi0rssZr24uIBzrXiAY3+bbuQeCLj2Xlw0wC1///lB8b/PeH3eN9xFAVyHADdMWYyIiwY43H3Di/eVVmJaZNEhwA0PXC1xAFyVyfEDZzYn0sUld1EWcfZXT1w0wOV/+hb97xte39rnRLLkD8YJnBLgZj5ccBr7FHISg/WGeIDzoUiAY0mMA9zAwDURB8CVGj9wxgFusLLwIU5PXKTAFcPVz+2zoVryB6MEDt9AmsQ8wA1XllbiogPuyT99Sbear31snxHZkj8YPXDmAW5w4OoHDrEBN0dD0+VdN4PU8QO34ICzCHADlqWNuMiAO8KYnUyyK/np3fR3i9C7R5JYBLghy9IycIgMuDmGbB83pyeTPl9JJZb8QQzAeXFhaexTtAKnruLHBdzZFiKtaFERaunv+GX3DiexaVEHLQubONQTFxtwiLGiRd3MVwW40sWGt8GB474YLREXI3CkRU2/SV3ECZz4C14ycXEBt0QDBdqiFv9csc+JZMkfjA24alELJbFqUYcHjiNObFXjAg6NUtcn6MsMy08mDibiIgLOZow6dFnERlUkLjLg8gdoAq4IcGjqt35W5Fh9wv13dyL72Xxu1f6ZbYAbC3Aa4mIDLn9y8yb6eZGzHzX9yO+hAtxhdA8G4XaJxAacSpwXl6Y0Jhc5XLzfkx/t9nxn+n6eP51K50cM3EIAruHBgb1chDT2KWqTcLmXiEsSOPmhgeWjkOSHWo4XOGEb3DPbADd4WRa1xMUIXOsGzPNd8dFu5dMs43lArwicbYAbvizKFzFmPlzq05hcZATc6T2DLebH09uPdqbX3yvhYiGPPcZy9M+8x/erOhzs2fbdxZeAEDdodnQyAU78vYc64OgIoXo4Knt8atXWRgBcdbQxzhvWrPETZ7Z4n73yi9avCe5N3/0qz7/b4Z5hKQNHseMPBm+GOPENqvUQ1dhFSmOfoimJ+mWMmQeXujQmF5n9xq/FlqSqxxYbcBreZu5d5DT2KRqT6ImLDTib9foKL7UPRy2FTI7gJlH1DXDjKIs6cJitDnBRjVKF2NAlwI2jLEIxNihxcQFX9OEMHjzD4thxNWqIax5OA5wHFyWNfYqWJJrPzSwy4My2JO1NbxSDhqc75XPI41pp6B/gRlIWXUFmzl20aUwuMgHuT4+ztVdaR6nnd6qVU/rM+5jWUvvzNpay6AY/4/nwmD6JxuC3RS4e7bC9IRS4iHaLOAhwYymLVJRuxMUAnKnGCJx4kyz3wRm76NJ4cNET59pFk8bkIqMmNf0fs9EEuBF1tC1dpE9PJ+KGX7x3pxECJ9+iuIFTibPvIgBwfBr7FDZTCXRKJGLgHMS4oYE7vYefCHL2tw07fk01PuB0AS4l4DoQNyxwywd0tFCMH/o8fJxa8gdjuEk63uIGTi7SM2vihgVunmWX/25CftAmwW9tJQicVKZnG7azIwN/TbCgjKyoLhP8MRs9bykAx2+XtyRu4LXUzXIJ/yhL7Zv32g62c5faNL5cJOBsiRt24hc1oxS49H5bpCbAxQ6c9A00W+KG356UNHDVUTVjFTtw0pe6MXHm83GjiXDJPRFaO2Pl3KU+jT8XGTgr4kbTh5un9mM2unVH9y71aTy66IAzJW7gUWp2iwCHJuR6T8SNCrj6XSLxA1cRR5OUwM1culRpTC4ynYdbf2uy9s9vZVn/ADcq4Bp2KyYCXPVbd7kNcQMvbT0oNydd6//o1NECJ7Y3qQBX/nwskjFxQ6+l/umTqwVt600/nmSsEQHXtO0yAeByBThj4oYGzqXGA1zjtssUgBN/kR3LkLikgBv61waYSItTHkb52w5tEotYqBqqDlPUtsdXfqMonR2/zd9jSCLC0W4cn2TDKMYNFOGkrzOk9Z0G3dZ/9y5taXy7LKR+gyFxAByfxj6FJkndGqpbl9Y03l0U4IwmgIfqw5Em9dfo55OKf39/b7J2K5EmddHcoKYDXBNxDl1yh4OGk0m56/J0K5ENmFreZq5dDNIEcOlC3MBrqdVy1lEia6mtvKUGnEpcY6M6/PYk3UE3jQa48kDbhU4HOE2Iy9vGDQAcn8Y+hZyknbeUgOtA3JDALe9yTep+ElvMxSVUfcWnBNyzBuIcuphcZNKH28/WbpV/pvAlGrFTU/NBTx24ZuIGBQ497X7t5i8++/StSdY/wA0PnBFvaQFX06jWEzfwF6Gr5zQksD1JGrTV1XlawNl244ZevEc/9ZBl628nsD3JkLckgTMnbmjgXGpY4Ex5Sw24RuLcubRq1YDT8TZz7mKRJpyLFXEAHJ/GPgVLYs5besBZEQfA8WnsU9AkFrwlCFwNcQBcm3oCV55t3hOWIHANxLl0adRKAWfDW5LANUyOuHRp0ioBZ8VbmsDpidNtXYgAuL+g5zT88H3uzDF5MMg4nkSzENqTWRtviQKnJS5O4P68S/DiHkR+OCLgRN5a41vawLUTFwFwe9PbfxSftZXvSahRS/4g1E2y5i1V4PTbMZXqGD9w7HG8h1WIk5/Myyz5g0A3STcfsuHcJQrgtMQpH8DxA8f0fKcE7nz3Nd0VAwBnM//W3SUS4OqJc+pSI+fAcU9HPZ7eLsYR198rH8/7IlHwb3uTGi4PCW8bwbMxGkn1gRTsZwdcA/d8p2pG6ZihemLvQMABb7IWCnIboYhzDNxzYcwwfferPP9uZ+AnQmvb05YOnL1LHk+TmstzREhSoxpJk/oUPwNa0sDPvNfztuLA6X4BQiAuCuAuHk2vf6A5LQ1WwwJHGw92aMxb4sC1ERcDcBf38VPvNecHBI51VuihOW+pA6dBLjLgCt5uC03n+S4B7Xg6XJNKK5W5mPbfLF1YihiBq/k9nwiAO5TGBmjQgCKesPaALfkDrzeprFIBODPe0geOVY/0jXDXLpIcrjRMq1mQ8120qHV+h5yQQAwGXFWf1MWGtxUATiUuJuCOpwpwxShiZzq98SvZUsikv5vE1SZ2sWlPzV34FLEBpzarJXHjB85cgYDjqxK5tG9I6uIipIgPOO0mGvcunJIFTqjIwmVmGeAGRyGUi4BcWUcAHJ/G4Brxg1uuZ5nzNgIUArmoxPlwYUoUOKlr0oG3MaAQyEUYO1DiADg+TdsFygxTB95GgUIgF5442tMF4Pg0La874W0cKIRy4ZBje2k8uCClB5wyudSNt7GgEMhFJc6HS54gcApuHXkbDQqhXCTiADguTcNrtbw5dalJETVwVdVZTljauSQGnIJbZ97GhEIoF4acz49oWsDV8hY7CoFcWE+uG3ErB1xdc1r036JHIZCLQJwXl4SAa+ItfhQCuQBwGmmTqLMh3PJpCiiEcqmI8zKuTwW4hvDm0KUlRSIuXYlbIeA04U2YfksFhUAuHccNqwNcLW6sxpJBIZQLBc6OuJUBrrk5deVikCIhly7EjRY4t78dQHHjT1HeQvxURrIqiXP8vtFHuNrwxn84U4o94X5RzzbGjTbC8QdOfs9R3RoiLdanhUIgF2viVgA4o/DW28U4RWoulsQlD1xDeJNTpIZCIBc74lIHzhi3FFEI5UJqVH62bw+XeIGTeWO4zXQpEkQhkAv5CBsRlzRwtbhpw3+SKARyoTHOALmUgZN4a8YtVRQCuRgTly5w0mihDbdkUQjjwiq3FblUgbPGLVkUArmwCm4jLlHgRN5McEsXhVAuJXL9XaIDrgNuKaMQyMUoyKUIXCfckkYhkEtFXD1y6QGnb01NfpE8YRRCubQjlxxwjDeUxDy62bqUaexTJO7ShlxiwFXh7VmFm2Ha1FEI5FJWu74vlxRwfGs6s+UtfRQCucwakUsIuAXHm11jauMipbFPsQIuAnISdMkAp8XNynIVUAjlMqtlLg3gFhxu9m2pqYsujX2KFXHZmOmhCw7cd3fkpzKoZ3Ib4Bac+E+Wdc6Gv0mJucwU5pQGtkYOgTtUnjujnsGW/EFdwRaChOLFepPScpnJ4puiBrkD7jl+VurTKX4GTc0ZYskfSAVbyJKLhdNY520kNykxF4W5Gd5T0gye84e7cc94U88QS/6ALxjK5IauFFJTGvNNSsyl8XZpiXMG3MV9Esiq5z+rZ6glf1AVTI1mWtry6G9SYi4NzOkudwgceToqe0qq7syLRPqvZDfB5vjb3yDnMr5tDh9fSeJY9fxn9UwH4HxWEsi1xgYcxY4/kL+sMTOwir8ZWmGX8QBnrhFVH7jYugTtw1FLIZNxVx+42LqMZ5RqrhFVH7jYuoxpHs5UI6o+cLF1GdlKg5FGVH3gYuviZy31fBdD1mMttUkjqj5wsXXxs1uEAtd3t0iNRlR94GLrMvr9cBqNqPrAxdZlCOBAKy0ADhRUwYGT6AOX1XUB4MAlqAsABy5BXQA4cAnqAsCBS1CXAYADrbYAOFBQAXCgoALgQEEFwIGCCoADBRUABwoqAA4UVL6BU3Zk/uXRznT6w/fx38dkg7C0I92Fy8V/Fi5//1XNqz5c/JUFa4++sbey8C7OyqKRZ+CUPed/3iVnXuNe7V0wxeXiPjnzgfZVny7uy0LPkjf2VhadS4TAqd+q2Zve/mNxZgffpT03RVJdjqc3vsovfjtF34+t+WaPYxd/ZSFO5IS/svAursqilV/glO8Nsi/nH6IQJ39D35kL+4Isrria7y46dvFWFqTnOzfu0C8peSqL4OKqLFp5Ba7um9HozGuIvte8uuAX6vPg0sVrWQoA/us+odpjWUoXV2XRyzNw+t9+oJ+t4+ntYgRx/b1elVfvcvGID6NqHly6eC1LEUIv7vNh1EtZShdXZdHLK3B1v25TfLTQCdo3nfb7uNa4FN2U6T9835AHpy4+y3JY9HdZGPVXlsrFVVn0GgS453TMMH33q2KAvtOzR1KDws9+Np2++71v4KiLx7IckzjtGTjOxVVZ9BoCuKd4jFSqb4+k9jZc7BW16Bc45sLkvizkHX0Dx7sw9S2LXuH7cEWn5/oHuqucuuTsjO8+nHjGfVlY+zad+iwL7yJf5VbBR6kX99HslXhV3+qrG7uhd/Y+ShXy774sInC+ypIIcJr5noK327SQ7PN13Ld3qpntI++MK9Tb3BXv4q8sRGV33uM8XNVwOyqLVqFXGvgy7uFYR1cdnLqQdybdXn+z87yLv7JgUeD8rjRUgwY3ZdEq3Foq/oGl810WuotPz/kd9yuD5Gec2Crna9+Lr/pz8VcWLNYIeisL7+KsLDqF2y2CC3Zc9hXwqAjtHHG794FWH97HQfekeNhhoXHxVxb87mz86K0svIuzsmgE++FAQQXAgYIKgAMFFQAHCioADhRUABwoqAA4UFABcKCgAuBAQQXAgYIKgAMFFQA3Dp1Msm307/Jfvxw6K34FwI1DFLjHk0sAHCic9jMADhRQABwoqAA4ENLZVra9vJdla9cO0OHJ5NJvHmTZ5Y+Lv5+8kWXZyx/pLiv0Nfcq6qadouNXHnIvrr9zwF7MjzKs7eJ9NivjcMUMIQDORMV9/+kWhmENQVYA92bxdxGMlg8IIxlGTLosz9mrLxzgVNnNCffqPn0RxzQBuHxOUuTFmdQiHgBnojOE0asHxSASA1DQURwtP88LMhBqCLsr6mUIqSxiJ54AAAJOSURBVOJo+bsJfhWluvxFvvx1xg4RpU/KF7fzskk9YsTO8YspCYAzESIJN20FF5v4/y8cVIc5AgURol52C79K+DmhGBYUoX/36XvsM4Y54Fibml6LCsAZqbjxtI3DjR3HGW3xCCHSZQwpGqjKVEcUOL61FIFjbWp6LSoAZ6SqF4+JKJcF7pYtHiZEvKx4lR4R9FgqGvCO0IDhW+YgAXcywW1qei0qAGekqmnDsHDACUiJl51tZZU4TFkPbY7HD698gc9JwJF3TrBFBeCMVANcFdEIKXbA5Y+vkjEr6uhJwBGAE2xRATgjdY1wm/ybKMAVb/DpG2QeRAEOt6kJtqgAnJG69uEEXjTAIT2ecB28EjjEcpkgJQFwJipIouyw8SYhQR2l8pfNxRZRBK7CkWe4GroWIfNxgi0qAGekgiQSlI749k83DyddRpgicEkRrmRrrotwxXutXU2wRQXgjIT6/6hvT5q/Ch3NSgN3GXoVrZt+/Tqb+OWBKy6+XIxQUdqKYa61nWdZgi0qAGekAo6XJsKqKEVBWUvlL6teXdvO1T7c0YSlrV5Ey1/l9HCKLSoAZyTURUMbPdZvVVs7qMhukS90l7FX1699K6RiYez03qSciGMvFsGRAicPchMRAGciw5vvlBFxLJuMADgTDQFcuUUpLQFwJhoAuMdpBjgAzkihgTtiY4n0BMCZKDRwxRBi7SdO3ml0AuBAQQXAgYIKgAMFFQAHCioADhRUABwoqAA4UFABcKCgAuBAQQXAgYIKgAMFFQAHCioADhRU/w/1odpr03y9mwAAAABJRU5ErkJggg==" /><!-- --></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">print</span>(tb2, <span class="dt">digits =</span> <span class="dv">4</span>)</span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="co">#&gt;            Before (Z = 1) Before (Z = 0) Std. Diff After (Z = 1) After (Z = 0)</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="co">#&gt; female          5.802e-01      5.577e-01   0.03214     5.802e-01     5.802e-01</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a><span class="co">#&gt; black           1.907e-01      1.849e-01   0.01063     1.907e-01     1.907e-01</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a><span class="co">#&gt; bytest          5.188e+01      5.304e+01  -0.09760     5.188e+01     5.195e+01</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a><span class="co">#&gt; fincome         2.163e+04      2.344e+04  -0.07217     2.163e+04     2.144e+04</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a><span class="co">#&gt; dadeduc         1.102e+00      1.171e+00  -0.04092     1.102e+00     1.102e+00</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a><span class="co">#&gt; momeduc         9.349e-01      9.958e-01  -0.03750     9.349e-01     9.287e-01</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a><span class="co">#&gt; propensity      3.733e-01      3.672e-01   0.11463     3.733e-01     3.732e-01</span></span>
+<span id="cb12-10"><a href="#cb12-10"></a><span class="co">#&gt;             Std. Diff</span></span>
+<span id="cb12-11"><a href="#cb12-11"></a><span class="co">#&gt; female      0.0000000</span></span>
+<span id="cb12-12"><a href="#cb12-12"></a><span class="co">#&gt; black       0.0000000</span></span>
+<span id="cb12-13"><a href="#cb12-13"></a><span class="co">#&gt; bytest     -0.0052881</span></span>
+<span id="cb12-14"><a href="#cb12-14"></a><span class="co">#&gt; fincome     0.0075206</span></span>
+<span id="cb12-15"><a href="#cb12-15"></a><span class="co">#&gt; dadeduc     0.0000000</span></span>
+<span id="cb12-16"><a href="#cb12-16"></a><span class="co">#&gt; momeduc     0.0038426</span></span>
+<span id="cb12-17"><a href="#cb12-17"></a><span class="co">#&gt; propensity  0.0006584</span></span></code></pre></div>
+<p>One can further finely balance the joint distribution of multiple nominal variables. The code chunk below finely balances the joint distribution of father’s (4 levels) and mother’s (4 levels) education (<span class="math inline">\(4 \times 4 = 16\)</span> levels in total).</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="co"># Perform a matching with fine balance on dadeduc and moneduc</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a>matching_output3 =<span class="st"> </span><span class="kw">match_2C</span>(<span class="dt">Z =</span> Z, <span class="dt">X =</span> X, </span>
+<span id="cb13-3"><a href="#cb13-3"></a>                            <span class="dt">propensity =</span> propensity, </span>
+<span id="cb13-4"><a href="#cb13-4"></a>                            <span class="dt">dataset =</span> dt_Rouse,</span>
+<span id="cb13-5"><a href="#cb13-5"></a>                            <span class="dt">fb_var =</span> <span class="kw">c</span>(<span class="st">&#39;dadeduc&#39;</span>, <span class="st">&#39;momeduc&#39;</span>))</span>
+<span id="cb13-6"><a href="#cb13-6"></a>tb3 =<span class="st"> </span><span class="kw">check_balance</span>(Z, matching_output2, </span>
+<span id="cb13-7"><a href="#cb13-7"></a>                   <span class="dt">cov_list =</span> <span class="kw">c</span>(<span class="st">&#39;female&#39;</span>, <span class="st">&#39;black&#39;</span>, <span class="st">&#39;bytest&#39;</span>, <span class="st">&#39;fincome&#39;</span>, </span>
+<span id="cb13-8"><a href="#cb13-8"></a>                                <span class="st">&#39;dadeduc&#39;</span>, <span class="st">&#39;momeduc&#39;</span>, <span class="st">&#39;propensity&#39;</span>),</span>
+<span id="cb13-9"><a href="#cb13-9"></a>                   <span class="dt">plot_propens =</span> <span class="ot">FALSE</span>)</span>
+<span id="cb13-10"><a href="#cb13-10"></a><span class="kw">print</span>(tb3, <span class="dt">digits =</span> <span class="dv">4</span>)</span>
+<span id="cb13-11"><a href="#cb13-11"></a><span class="co">#&gt;            Before (Z = 1) Before (Z = 0) Std. Diff After (Z = 1) After (Z = 0)</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a><span class="co">#&gt; female          5.802e-01      5.577e-01   0.03214     5.802e-01     5.802e-01</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a><span class="co">#&gt; black           1.907e-01      1.849e-01   0.01063     1.907e-01     1.907e-01</span></span>
+<span id="cb13-14"><a href="#cb13-14"></a><span class="co">#&gt; bytest          5.188e+01      5.304e+01  -0.09760     5.188e+01     5.195e+01</span></span>
+<span id="cb13-15"><a href="#cb13-15"></a><span class="co">#&gt; fincome         2.163e+04      2.344e+04  -0.07217     2.163e+04     2.144e+04</span></span>
+<span id="cb13-16"><a href="#cb13-16"></a><span class="co">#&gt; dadeduc         1.102e+00      1.171e+00  -0.04092     1.102e+00     1.102e+00</span></span>
+<span id="cb13-17"><a href="#cb13-17"></a><span class="co">#&gt; momeduc         9.349e-01      9.958e-01  -0.03750     9.349e-01     9.287e-01</span></span>
+<span id="cb13-18"><a href="#cb13-18"></a><span class="co">#&gt; propensity      3.733e-01      3.672e-01   0.11463     3.733e-01     3.732e-01</span></span>
+<span id="cb13-19"><a href="#cb13-19"></a><span class="co">#&gt;             Std. Diff</span></span>
+<span id="cb13-20"><a href="#cb13-20"></a><span class="co">#&gt; female      0.0000000</span></span>
+<span id="cb13-21"><a href="#cb13-21"></a><span class="co">#&gt; black       0.0000000</span></span>
+<span id="cb13-22"><a href="#cb13-22"></a><span class="co">#&gt; bytest     -0.0052881</span></span>
+<span id="cb13-23"><a href="#cb13-23"></a><span class="co">#&gt; fincome     0.0075206</span></span>
+<span id="cb13-24"><a href="#cb13-24"></a><span class="co">#&gt; dadeduc     0.0000000</span></span>
+<span id="cb13-25"><a href="#cb13-25"></a><span class="co">#&gt; momeduc     0.0038426</span></span>
+<span id="cb13-26"><a href="#cb13-26"></a><span class="co">#&gt; propensity  0.0006584</span></span></code></pre></div>
+</div>
+<div id="sparsifying-the-network-to-match-faster-and-match-bigger-datasets" class="section level2">
+<h2>Sparsifying the Network to Match Faster and Match Bigger Datasets</h2>
+<p>Sparsifying a network refers to deleting certain edges in a network. Edges deleted typically connect a treated and a control subject that are unlikely to be a good match. Using the estimated propensity score as a caliper to delete unlikely edges is the most commonly used strategy. For instance, a propensity score caliper of 0.05 would result in deleting all edges connecting one treated and one control subject whose estimated propensity score differs by more than 0.05. Sparsifying the network has potential to greatly facilitate computation (Yu et al., 2020).</p>
+<p>Function <em>match_2C</em> allows users to specify two caliper sizes on the propensity scores, <em>caliper_left</em> for the left network and <em>caliper_right</em> for the right network. If users are interested in specifying a caliper other than the propensity score and/or specifying an asymmetric caliper (Yu and Rosenbaum, 2020), functions <em>match_2C_list</em> serves this purpose (see Section 4 for details). Moreover, users may further trim the number of edges using the option <em>k_left</em> and <em>k_right</em>. By default, each treated subject in the network is connected to each of the n_c control subjects. Option <em>k_left</em> allows users to specify that each treated subject gets connected only to the <em>k_left</em> control subjects who are closest to the treated subject in the propensity score in the left network. For instance, setting <em>k_left = 200</em> results in each treated subject being connected to at most 200 control subjects closest in the propensity score in the left network. Similarly, option <em>k_right</em> allows each treated subject to be connected to the closest <em>k_right</em> controls in the right network. Options <em>caliper_low</em>, <em>caliper_high</em>, <em>k_left</em>, and <em>k_right</em> can be used together.</p>
+<p>Below, we give a simple example illustrating the usage of caliper and contrasting the running time of applying <em>match_2C</em> without any caliper, one caliper on the left, and both calipers on the left and the right. Using double calipers in this case roughly cuts the computation time by almost two-thirds.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="co"># Timing the vanilla match2C function</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>ptm &lt;-<span class="st"> </span><span class="kw">proc.time</span>()</span>
+<span id="cb14-3"><a href="#cb14-3"></a>matching_output2 =<span class="st"> </span><span class="kw">match_2C</span>(<span class="dt">Z =</span> Z, <span class="dt">X =</span> X, </span>
+<span id="cb14-4"><a href="#cb14-4"></a>                            <span class="dt">propensity =</span> propensity, </span>
+<span id="cb14-5"><a href="#cb14-5"></a>                            <span class="dt">dataset =</span> dt_Rouse)</span>
+<span id="cb14-6"><a href="#cb14-6"></a>time_vanilla =<span class="st"> </span><span class="kw">proc.time</span>() <span class="op">-</span><span class="st"> </span>ptm</span>
+<span id="cb14-7"><a href="#cb14-7"></a></span>
+<span id="cb14-8"><a href="#cb14-8"></a><span class="co"># Timing the match2C function with caliper on the left</span></span>
+<span id="cb14-9"><a href="#cb14-9"></a>ptm &lt;-<span class="st"> </span><span class="kw">proc.time</span>()</span>
+<span id="cb14-10"><a href="#cb14-10"></a>matching_output_one_caliper =<span class="st"> </span><span class="kw">match_2C</span>(<span class="dt">Z =</span> Z, <span class="dt">X =</span> X, <span class="dt">propensity =</span> propensity, </span>
+<span id="cb14-11"><a href="#cb14-11"></a>                            <span class="dt">caliper_left =</span> <span class="fl">0.05</span>, <span class="dt">caliper_right =</span> <span class="fl">0.05</span>, </span>
+<span id="cb14-12"><a href="#cb14-12"></a>                            <span class="dt">k_left =</span> <span class="dv">100</span>,</span>
+<span id="cb14-13"><a href="#cb14-13"></a>                            <span class="dt">dataset =</span> dt_Rouse)</span>
+<span id="cb14-14"><a href="#cb14-14"></a>time_one_caliper =<span class="st"> </span><span class="kw">proc.time</span>() <span class="op">-</span><span class="st"> </span>ptm</span>
+<span id="cb14-15"><a href="#cb14-15"></a></span>
+<span id="cb14-16"><a href="#cb14-16"></a><span class="co"># Timing the match2C function with caliper on the left and right</span></span>
+<span id="cb14-17"><a href="#cb14-17"></a>ptm &lt;-<span class="st"> </span><span class="kw">proc.time</span>()</span>
+<span id="cb14-18"><a href="#cb14-18"></a>matching_output_double_calipers =<span class="st"> </span><span class="kw">match_2C</span>(<span class="dt">Z =</span> Z, <span class="dt">X =</span> X, </span>
+<span id="cb14-19"><a href="#cb14-19"></a>                            <span class="dt">propensity =</span> propensity, </span>
+<span id="cb14-20"><a href="#cb14-20"></a>                            <span class="dt">caliper_left =</span> <span class="fl">0.05</span>, <span class="dt">caliper_right =</span> <span class="fl">0.05</span>, </span>
+<span id="cb14-21"><a href="#cb14-21"></a>                            <span class="dt">k_left =</span> <span class="dv">100</span>, <span class="dt">k_right =</span> <span class="dv">100</span>,</span>
+<span id="cb14-22"><a href="#cb14-22"></a>                            <span class="dt">dataset =</span> dt_Rouse)</span>
+<span id="cb14-23"><a href="#cb14-23"></a>time_double_caliper =<span class="st"> </span><span class="kw">proc.time</span>() <span class="op">-</span><span class="st"> </span>ptm</span>
+<span id="cb14-24"><a href="#cb14-24"></a></span>
+<span id="cb14-25"><a href="#cb14-25"></a><span class="kw">rbind</span>(time_vanilla, time_one_caliper, time_double_caliper)[,<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>]</span>
+<span id="cb14-26"><a href="#cb14-26"></a><span class="co">#&gt;                     user.self sys.self elapsed</span></span>
+<span id="cb14-27"><a href="#cb14-27"></a><span class="co">#&gt; time_vanilla            15.84     0.58   16.62</span></span>
+<span id="cb14-28"><a href="#cb14-28"></a><span class="co">#&gt; time_one_caliper         7.66     0.22    8.16</span></span>
+<span id="cb14-29"><a href="#cb14-29"></a><span class="co">#&gt; time_double_caliper      2.86     0.01    2.97</span></span></code></pre></div>
+<p>Caveat: if caliper sizes are too small, the matching may be unfeasible. See the example below. In such an eventuality, users are advised to increase the caliper size and/or remove the exact matching constraints.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a><span class="co"># Perform a matching with fine balance on dadeduc and moneduc</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a>matching_output_unfeas =<span class="st"> </span><span class="kw">match_2C</span>(<span class="dt">Z =</span> Z, <span class="dt">X =</span> X, <span class="dt">propensity =</span> propensity, </span>
+<span id="cb15-3"><a href="#cb15-3"></a>                                  <span class="dt">dataset =</span> dt_Rouse,</span>
+<span id="cb15-4"><a href="#cb15-4"></a>                                  <span class="dt">caliper_left =</span> <span class="fl">0.001</span>)</span>
+<span id="cb15-5"><a href="#cb15-5"></a><span class="co">#&gt; Hard caliper fails. Please specify a soft caliper. </span></span>
+<span id="cb15-6"><a href="#cb15-6"></a><span class="co">#&gt; Matching is unfeasible. Please increase the caliper size or remove</span></span>
+<span id="cb15-7"><a href="#cb15-7"></a><span class="co">#&gt;         the exact matching constraints.</span></span></code></pre></div>
+</div>
+</div>
+<div id="function-match_2c_mat-matching-with-two-user-supplied-distance-matrices" class="section level1">
+<h1>Function <em>match_2C_mat</em>: Matching with Two User-Supplied Distance Matrices</h1>
+<div id="an-overview" class="section level2">
+<h2>An Overview</h2>
+<p>We illustrate how to use the function <em>match_2C_mat</em> in this section. The function <em>match_2C_mat</em> takes the following inputs:</p>
+<ul>
+<li><p>Z: A length-n vector of treatment indicator.</p></li>
+<li><p>X: A n-by-p matrix of covariates.</p></li>
+<li><p>dataset: The original dataset.</p></li>
+<li><p>dist_mat_1: A user-specified treatment-by-control (n_t-by-n_c) distance matrix.</p></li>
+<li><p>dist_mat_2: A second user-specified treatment-by-control (n_t-by-n_c) distance matrix.</p></li>
+<li><p>lambda: A penalty that does a trade-off between two parts of the network.</p></li>
+<li><p>controls: Number of controls matched to each treated. Default is 1.</p></li>
+<li><p>p_1: A length-n vector on which caliper_1 applies, e.g. a vector of propensity score.</p></li>
+<li><p>caliper_1: Size of caliper_1.</p></li>
+<li><p>k_1: Maximum number of controls each treated is connected to in the first network.</p></li>
+<li><p>p_2: A length-n vector on which caliper_2 applies, e.g. a vector of propensity score.</p></li>
+<li><p>caliper_2: Size of caliper_2.</p></li>
+<li><p>k_2: Maximum number of controls each treated is connected to in the second network.</p></li>
+<li><p>penalty: Penalty for violating the caliper. Set to Inf by default.</p></li>
+</ul>
+<p>The key inputs to the function <em>match_2C_mat</em> are two distance matrices. The simplest way to construct a n_t-by_n_c distance matrix is to use the function <em>match_on</em> in the <strong>R</strong> package <strong>optmatch</strong>.</p>
+</div>
+<div id="examples" class="section level2">
+<h2>Examples</h2>
+<p>We give two examples below to illustrate <em>match_2C_mat</em>.</p>
+<p>In the first example, we construct <em>dist_mat_1</em> based on the Mahalanobis distance between all covariates in X, and <em>dist_mat_2</em> based on the Euclidean distance of the covariate <em>dadeduc</em>. A large penalty lambda is applied to the second distance matrix so that the algorithm is forced to find an optimal match that satisfies (near-)fine balance on the nominal variable <em>dadeduc</em>. We do not use any caliper in this example.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a><span class="co"># Construct a distance matrix based on Mahalanobis distance</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a>dist_mat_<span class="dv">1</span> =<span class="st"> </span>optmatch<span class="op">::</span><span class="kw">match_on</span>(IV<span class="op">~</span>female<span class="op">+</span>black<span class="op">+</span>bytest<span class="op">+</span>dadeduc<span class="op">+</span>momeduc<span class="op">+</span>fincome, </span>
+<span id="cb16-3"><a href="#cb16-3"></a>                      <span class="dt">method =</span> <span class="st">&#39;mahalanobis&#39;</span>, <span class="dt">data =</span> dt_Rouse)</span>
+<span id="cb16-4"><a href="#cb16-4"></a></span>
+<span id="cb16-5"><a href="#cb16-5"></a><span class="co"># Construct a second distance matrix based on variable dadeduc</span></span>
+<span id="cb16-6"><a href="#cb16-6"></a>dist_mat_<span class="dv">2</span> =<span class="st"> </span>optmatch<span class="op">::</span><span class="kw">match_on</span>(IV <span class="op">~</span><span class="st"> </span>dadeduc, <span class="dt">method =</span> <span class="st">&#39;euclidean&#39;</span>, </span>
+<span id="cb16-7"><a href="#cb16-7"></a>                                <span class="dt">data =</span> dt_Rouse)</span>
+<span id="cb16-8"><a href="#cb16-8"></a>matching_output_mat =<span class="st"> </span><span class="kw">match_2C_mat</span>(Z, dt_Rouse, dist_mat_<span class="dv">1</span>, dist_mat_<span class="dv">2</span>, </span>
+<span id="cb16-9"><a href="#cb16-9"></a>                               <span class="dt">lambda =</span> <span class="dv">10000</span>, <span class="dt">controls =</span> <span class="dv">1</span>,</span>
+<span id="cb16-10"><a href="#cb16-10"></a>                               <span class="dt">p_1 =</span> <span class="ot">NULL</span>, <span class="dt">p_2 =</span> <span class="ot">NULL</span>)</span>
+<span id="cb16-11"><a href="#cb16-11"></a><span class="co">#&gt; Finish converting distance matrices to lists </span></span>
+<span id="cb16-12"><a href="#cb16-12"></a><span class="co">#&gt; Solving the network flow problem </span></span>
+<span id="cb16-13"><a href="#cb16-13"></a><span class="co">#&gt; Finish solving the network flow problem</span></span>
+<span id="cb16-14"><a href="#cb16-14"></a></span>
+<span id="cb16-15"><a href="#cb16-15"></a><span class="co"># Examine the balance after matching</span></span>
+<span id="cb16-16"><a href="#cb16-16"></a>tb_mat =<span class="st"> </span><span class="kw">check_balance</span>(Z, matching_output_mat, </span>
+<span id="cb16-17"><a href="#cb16-17"></a>                   <span class="dt">cov_list =</span> <span class="kw">c</span>(<span class="st">&#39;female&#39;</span>, <span class="st">&#39;black&#39;</span>, <span class="st">&#39;bytest&#39;</span>, <span class="st">&#39;fincome&#39;</span>, </span>
+<span id="cb16-18"><a href="#cb16-18"></a>                                <span class="st">&#39;dadeduc&#39;</span>, <span class="st">&#39;momeduc&#39;</span>, <span class="st">&#39;propensity&#39;</span>),</span>
+<span id="cb16-19"><a href="#cb16-19"></a>                   <span class="dt">plot_propens =</span> <span class="ot">FALSE</span>)</span>
+<span id="cb16-20"><a href="#cb16-20"></a></span>
+<span id="cb16-21"><a href="#cb16-21"></a><span class="kw">print</span>(tb_mat, <span class="dt">digits =</span> <span class="dv">4</span>)</span>
+<span id="cb16-22"><a href="#cb16-22"></a><span class="co">#&gt;            Before (Z = 1) Before (Z = 0) Std. Diff After (Z = 1) After (Z = 0)</span></span>
+<span id="cb16-23"><a href="#cb16-23"></a><span class="co">#&gt; female          5.802e-01      5.577e-01   0.03214     5.802e-01     5.802e-01</span></span>
+<span id="cb16-24"><a href="#cb16-24"></a><span class="co">#&gt; black           1.907e-01      1.849e-01   0.01063     1.907e-01     1.907e-01</span></span>
+<span id="cb16-25"><a href="#cb16-25"></a><span class="co">#&gt; bytest          5.188e+01      5.304e+01  -0.09760     5.188e+01     5.236e+01</span></span>
+<span id="cb16-26"><a href="#cb16-26"></a><span class="co">#&gt; fincome         2.163e+04      2.344e+04  -0.07217     2.163e+04     2.154e+04</span></span>
+<span id="cb16-27"><a href="#cb16-27"></a><span class="co">#&gt; dadeduc         1.102e+00      1.171e+00  -0.04092     1.102e+00     1.102e+00</span></span>
+<span id="cb16-28"><a href="#cb16-28"></a><span class="co">#&gt; momeduc         9.349e-01      9.958e-01  -0.03750     9.349e-01     9.242e-01</span></span>
+<span id="cb16-29"><a href="#cb16-29"></a><span class="co">#&gt; propensity      3.733e-01      3.672e-01   0.11463     3.733e-01     3.716e-01</span></span>
+<span id="cb16-30"><a href="#cb16-30"></a><span class="co">#&gt;            Std. Diff</span></span>
+<span id="cb16-31"><a href="#cb16-31"></a><span class="co">#&gt; female      0.000000</span></span>
+<span id="cb16-32"><a href="#cb16-32"></a><span class="co">#&gt; black       0.000000</span></span>
+<span id="cb16-33"><a href="#cb16-33"></a><span class="co">#&gt; bytest     -0.040432</span></span>
+<span id="cb16-34"><a href="#cb16-34"></a><span class="co">#&gt; fincome     0.003662</span></span>
+<span id="cb16-35"><a href="#cb16-35"></a><span class="co">#&gt; dadeduc     0.000000</span></span>
+<span id="cb16-36"><a href="#cb16-36"></a><span class="co">#&gt; momeduc     0.006587</span></span>
+<span id="cb16-37"><a href="#cb16-37"></a><span class="co">#&gt; propensity  0.031090</span></span></code></pre></div>
+<p>In the second example, we further incorporate a propensity score caliper in the left network. The code chunk below implements a propensity score caliper of size 0.05 and connecting each treated only to at most 100 closest controls.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1"></a>matching_output_mat_caliper =<span class="st"> </span><span class="kw">match_2C_mat</span>(Z, dt_Rouse, </span>
+<span id="cb17-2"><a href="#cb17-2"></a>                                 dist_mat_<span class="dv">1</span>, dist_mat_<span class="dv">2</span>, </span>
+<span id="cb17-3"><a href="#cb17-3"></a>                                 <span class="dt">lambda =</span> <span class="dv">100000</span>, <span class="dt">controls =</span> <span class="dv">1</span>,</span>
+<span id="cb17-4"><a href="#cb17-4"></a>                                 <span class="dt">p_1 =</span> propensity, </span>
+<span id="cb17-5"><a href="#cb17-5"></a>                                 <span class="dt">caliper_1 =</span> <span class="fl">0.05</span>, <span class="dt">k_1 =</span> <span class="dv">100</span>)</span>
+<span id="cb17-6"><a href="#cb17-6"></a><span class="co">#&gt; Finish converting distance matrices to lists </span></span>
+<span id="cb17-7"><a href="#cb17-7"></a><span class="co">#&gt; Solving the network flow problem </span></span>
+<span id="cb17-8"><a href="#cb17-8"></a><span class="co">#&gt; Finish solving the network flow problem</span></span></code></pre></div>
+<p>Function <em>match_2C_mat</em> is meant to be of primary interest to users who are familiar with the package <strong>optmatch</strong> and constructing distance matrices using the function <em>match_on</em>. Package <strong>match2C</strong> offers functions that allow users to construct a distance list directly from the data, possibly with user-supplied distance functions. This is the topic of the next section.</p>
+</div>
+</div>
+<div id="function-match_2c_list-matching-with-two-user-supplied-distance-lists" class="section level1">
+<h1>Function <em>match_2C_list</em>: Matching with Two User-Supplied Distance Lists</h1>
+<div id="constructing-distance-lists-from-data" class="section level2">
+<h2>Constructing Distance Lists from Data</h2>
+<p>A distance list is the most fundamental building block for network-flow-based statistical matching. Function <em>create_list_from_mat</em> allows users to convert a distance matrix to a distance list and function <em>create_list_from_scratch</em> allows users to construct a distance list directly from data. Function <em>create_list_from_scratch</em> is highly flexible and allows users to construct a distance list tailored to their specific needs.</p>
+<p>The code chunk below illustrates the usage of <em>create_list_from_mat</em> by creating a distance list object <em>list_0</em> from the distance matrix <em>dist_mat_1</em>. Note that the distance list has <span class="math inline">\(1,122 \times 1,915 = 2,148,630\)</span> edges, i.e., each of the 1,122 treated subject is connected to each of the 1,915 control subjects.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a>dist_mat_<span class="dv">1</span> =<span class="st"> </span>optmatch<span class="op">::</span><span class="kw">match_on</span>(IV <span class="op">~</span><span class="st"> </span>female <span class="op">+</span><span class="st"> </span>black <span class="op">+</span><span class="st"> </span>bytest <span class="op">+</span><span class="st"> </span></span>
+<span id="cb18-2"><a href="#cb18-2"></a><span class="st">                                </span>dadeduc <span class="op">+</span><span class="st"> </span>momeduc <span class="op">+</span><span class="st"> </span>fincome, </span>
+<span id="cb18-3"><a href="#cb18-3"></a>                                <span class="dt">method =</span> <span class="st">&#39;mahalanobis&#39;</span>, <span class="dt">data =</span> dt_Rouse)</span>
+<span id="cb18-4"><a href="#cb18-4"></a></span>
+<span id="cb18-5"><a href="#cb18-5"></a>list_<span class="dv">0</span> =<span class="st"> </span><span class="kw">create_list_from_mat</span>(Z, dist_mat_<span class="dv">1</span>, <span class="dt">p =</span> <span class="ot">NULL</span>) </span>
+<span id="cb18-6"><a href="#cb18-6"></a><span class="kw">length</span>(list_<span class="dv">0</span><span class="op">$</span>start_n) <span class="co"># number of edges in the network</span></span>
+<span id="cb18-7"><a href="#cb18-7"></a><span class="co">#&gt; [1] 2148630</span></span>
+<span id="cb18-8"><a href="#cb18-8"></a><span class="kw">identical</span>(<span class="kw">length</span>(list_<span class="dv">0</span><span class="op">$</span>start_n), n_t<span class="op">*</span>n_c) <span class="co"># Check # of edges is n_t * n_c</span></span>
+<span id="cb18-9"><a href="#cb18-9"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>Function <em>create_list_from_mat</em> also allows caliper. Below, We apply a propensity score caliper of size <span class="math inline">\(0.05\)</span> to remove edges by setting <em>p = propensity</em> and <em>caliper = 0.05</em>. Observe that the number of edges is almost halved now.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1"></a>list_<span class="dv">1</span> =<span class="st"> </span><span class="kw">create_list_from_mat</span>(Z, dist_mat_<span class="dv">1</span>, </span>
+<span id="cb19-2"><a href="#cb19-2"></a>                              <span class="dt">p =</span> propensity, </span>
+<span id="cb19-3"><a href="#cb19-3"></a>                              <span class="dt">caliper =</span> <span class="fl">0.05</span>)</span>
+<span id="cb19-4"><a href="#cb19-4"></a><span class="kw">length</span>(list_<span class="dv">1</span><span class="op">$</span>start_n) <span class="co"># Number of edges is almost halved</span></span>
+<span id="cb19-5"><a href="#cb19-5"></a><span class="co">#&gt; [1] 1379445</span></span></code></pre></div>
+<p>Function <em>create_list_from_scratch</em> allows users to construct a distance list without first creating a distance matrix. This is a great tool for users who are interested in experimenting/developing different matching strategies. Roughly speaking, <em>create_list_from_scratch</em> is an analogue of the function <em>match_on</em> in the package <em>optmatch</em>.</p>
+<p>Currently, there are 5 default distance specifications implemented: <em>maha</em> (Mahalanobis distance), <em>L1</em> (L1 disance), <em>robust maha</em> (robust Mahalanobis distance), <em>0/1</em> (distance = 0 if and only if covariates are the same), and <em>Hamming</em> (Hamming distance), and <em>other</em> allows user-supplied distance functions. We will defer a discussion on how to use this user-supplied option to the next section.</p>
+<p>The minimal input to the function <em>create_list_from_scratch</em> is treatment Z and covariate matrix X. The user may choose the distance specification via the option <em>method</em>. Other useful options include the following:</p>
+<ul>
+<li>Option <em>exact</em> allows users to specify variables that need to be exactly matched.</li>
+<li>Option <em>p</em> allows users to specify a variable, e.g., the propensity score, as a caliper.</li>
+<li>Options <em>caliper_low</em> and <em>caliper_high</em> set the size of this caliper. The size of the caliper is defined by [variable - caliper_low, variable + caliper_high]. Setting <em>caliper_low</em> and <em>caliper_high</em> to different magnitudes allows a so-called asymmetric caliper (Yu and Rosenbaum, 2020). If only <em>caliper_low</em> is used, <em>caliper_high</em> is then set to <em>caliper_low</em> by default and a symmetric caliper is used.</li>
+<li>Option <em>k</em> allows users to further sparsify the network by connecting each treated only to k controls closest in the caliper.</li>
+<li>Option <em>penalty</em> allows users to make the specified caliper a <em>soft</em> caliper, in the sense that the caliper is allowed to be violated at a cost of <em>penalty</em>. Option <em>penalty</em> is set to <em>Inf</em> by default, i.e., a <em>hard</em> caliper is implemented.</li>
+</ul>
+<p>Below, we give several examples below to illustrate its usage.</p>
+<p>First, we create a list representation using the Mahalanobis/Hamming/robust Mahalanobis distance without any caliper or exact matching requirement.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a><span class="co"># Mahalanobis distance on all variables</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a>dist_list_vanilla_maha =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, <span class="dt">exact =</span> <span class="ot">NULL</span>, </span>
+<span id="cb20-3"><a href="#cb20-3"></a>                                                  <span class="dt">method =</span> <span class="st">&#39;maha&#39;</span>) </span>
+<span id="cb20-4"><a href="#cb20-4"></a></span>
+<span id="cb20-5"><a href="#cb20-5"></a><span class="co"># Hamming distance on all variables</span></span>
+<span id="cb20-6"><a href="#cb20-6"></a>dist_list_vanilla_Hamming =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, <span class="dt">exact =</span> <span class="ot">NULL</span>, </span>
+<span id="cb20-7"><a href="#cb20-7"></a>                                                      <span class="dt">method =</span> <span class="st">&#39;Hamming&#39;</span>) </span>
+<span id="cb20-8"><a href="#cb20-8"></a></span>
+<span id="cb20-9"><a href="#cb20-9"></a><span class="co"># Robust Mahalanobis distance on all variables</span></span>
+<span id="cb20-10"><a href="#cb20-10"></a>dist_list_vanilla_robust_maha =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, <span class="dt">exact =</span> <span class="ot">NULL</span>, </span>
+<span id="cb20-11"><a href="#cb20-11"></a>                                                      <span class="dt">method =</span> <span class="st">&#39;robust maha&#39;</span>) </span></code></pre></div>
+<p>We further specify a symmetric propensity score caliper of size <span class="math inline">\(0.05\)</span> and <span class="math inline">\(k = 100\)</span>.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a><span class="co"># Mahalanobis distance on all variables with pscore caliper</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a>dist_list_pscore_maha =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, <span class="dt">exact =</span> <span class="ot">NULL</span>, </span>
+<span id="cb21-3"><a href="#cb21-3"></a>                                       <span class="dt">p =</span> propensity, </span>
+<span id="cb21-4"><a href="#cb21-4"></a>                                       <span class="dt">caliper_low =</span> <span class="fl">0.05</span>, </span>
+<span id="cb21-5"><a href="#cb21-5"></a>                                       <span class="dt">k =</span> <span class="dv">100</span>, </span>
+<span id="cb21-6"><a href="#cb21-6"></a>                                       <span class="dt">method =</span> <span class="st">&#39;maha&#39;</span>) </span>
+<span id="cb21-7"><a href="#cb21-7"></a></span>
+<span id="cb21-8"><a href="#cb21-8"></a><span class="co"># Hamming distance on all variables with pscore caliper</span></span>
+<span id="cb21-9"><a href="#cb21-9"></a>dist_list_pscore_Hamming =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, <span class="dt">exact =</span> <span class="ot">NULL</span>, </span>
+<span id="cb21-10"><a href="#cb21-10"></a>                                       <span class="dt">p =</span> propensity, </span>
+<span id="cb21-11"><a href="#cb21-11"></a>                                       <span class="dt">caliper_low =</span> <span class="fl">0.05</span>, </span>
+<span id="cb21-12"><a href="#cb21-12"></a>                                       <span class="dt">k =</span> <span class="dv">100</span>, </span>
+<span id="cb21-13"><a href="#cb21-13"></a>                                       <span class="dt">method =</span> <span class="st">&#39;Hamming&#39;</span>) </span>
+<span id="cb21-14"><a href="#cb21-14"></a></span>
+<span id="cb21-15"><a href="#cb21-15"></a><span class="co"># Robust Mahalanobis distance on all variables with pscore caliper</span></span>
+<span id="cb21-16"><a href="#cb21-16"></a>dist_list_pscore_robust_maha =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, <span class="dt">exact =</span> <span class="ot">NULL</span>, </span>
+<span id="cb21-17"><a href="#cb21-17"></a>                                       <span class="dt">p =</span> propensity, </span>
+<span id="cb21-18"><a href="#cb21-18"></a>                                       <span class="dt">caliper_low =</span> <span class="fl">0.05</span>, </span>
+<span id="cb21-19"><a href="#cb21-19"></a>                                       <span class="dt">k =</span> <span class="dv">100</span>, </span>
+<span id="cb21-20"><a href="#cb21-20"></a>                                       <span class="dt">method =</span> <span class="st">&#39;robust maha&#39;</span>) </span></code></pre></div>
+<p>If we specify too small a caliper, the problem may fail in the sense that some treated subjects are not connected to any control. See the example below.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a>dist_list_pscore_maha_hard =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, <span class="dt">exact =</span> <span class="ot">NULL</span>, </span>
+<span id="cb22-2"><a href="#cb22-2"></a>                                       <span class="dt">p =</span> propensity, </span>
+<span id="cb22-3"><a href="#cb22-3"></a>                                       <span class="dt">caliper_low =</span> <span class="fl">0.001</span>, </span>
+<span id="cb22-4"><a href="#cb22-4"></a>                                       <span class="dt">method =</span> <span class="st">&#39;maha&#39;</span>) </span>
+<span id="cb22-5"><a href="#cb22-5"></a><span class="co">#&gt; Hard caliper fails. Please specify a soft caliper.</span></span></code></pre></div>
+<p>In this case, users are advised to use a soft caliper by specifying a large penalty or increase the caliper size. See the example below.</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1"></a>dist_list_pscore_maha_soft =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, <span class="dt">exact =</span> <span class="ot">NULL</span>, </span>
+<span id="cb23-2"><a href="#cb23-2"></a>                                       <span class="dt">p =</span> propensity, </span>
+<span id="cb23-3"><a href="#cb23-3"></a>                                       <span class="dt">caliper_low =</span> <span class="fl">0.001</span>, </span>
+<span id="cb23-4"><a href="#cb23-4"></a>                                       <span class="dt">method =</span> <span class="st">&#39;maha&#39;</span>, </span>
+<span id="cb23-5"><a href="#cb23-5"></a>                                       <span class="dt">penalty =</span> <span class="dv">1000</span>) </span></code></pre></div>
+<p>Next, we create a list representation without caliper; however, we insist that dad’s education is exactly matched. This can be done by setting the option <em>exact</em> to a vector of names of variables to be exactly matched.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a>dist_list_exact_dadeduc_maha =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, </span>
+<span id="cb24-2"><a href="#cb24-2"></a>                                                        <span class="dt">exact =</span> <span class="kw">c</span>(<span class="st">&#39;dadeduc&#39;</span>), </span>
+<span id="cb24-3"><a href="#cb24-3"></a>                                                        <span class="dt">method =</span> <span class="st">&#39;maha&#39;</span>) </span></code></pre></div>
+<p>Finally, we create a list representation with an assymetric propensity score caliper and <span class="math inline">\(k = 100\)</span>; moreover, we insist that both dad’s education and mom’s education are exactly matched.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1"></a>dist_list_exact_dad_mom_with_caliper =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, </span>
+<span id="cb25-2"><a href="#cb25-2"></a>                                                <span class="dt">exact =</span> <span class="kw">c</span>(<span class="st">&#39;dadeduc&#39;</span>, <span class="st">&#39;momeduc&#39;</span>), </span>
+<span id="cb25-3"><a href="#cb25-3"></a>                                                <span class="dt">p =</span> propensity, </span>
+<span id="cb25-4"><a href="#cb25-4"></a>                                                <span class="dt">caliper_low =</span> <span class="fl">0.05</span>, </span>
+<span id="cb25-5"><a href="#cb25-5"></a>                                                <span class="dt">caliper_high =</span> <span class="fl">0.1</span>,</span>
+<span id="cb25-6"><a href="#cb25-6"></a>                                                <span class="dt">k =</span> <span class="dv">100</span>, </span>
+<span id="cb25-7"><a href="#cb25-7"></a>                                                <span class="dt">method =</span> <span class="st">&#39;maha&#39;</span>) </span></code></pre></div>
+</div>
+<div id="matching-with-one-or-two-distance-lists" class="section level2">
+<h2>Matching with One or Two Distance Lists</h2>
+<p>Function <em>match_2C_list</em> takes as input the following arguments:</p>
+<ul>
+<li><p>Z: A length-n vector of treatment indicator.</p></li>
+<li><p>dataset: The original dataset.</p></li>
+<li><p>dist_list_1: A distance list object returned by the function <em>create_list_from_scratch</em>.</p></li>
+<li><p>dist_list_2: A second distance list object returned by the function <em>create_list_from_scratch</em>.</p></li>
+<li><p>lambda: A penalty that controls the trade-off between two parts of the network.</p></li>
+<li><p>controls: Number of controls matched to each treated. Default is set to 1.</p></li>
+<li><p>overflow: A logical value indicating if overflow protection is turned on. If overflow = TRUE, then the matching is feasible as long as the left network is feasible. Default is set to FALSE.</p></li>
+</ul>
+<p>The key inputs are two distance list objects. The object <em>dist_list_1</em> represents the network structure of the left network, while <em>dist_list_2</em> represents the structure of the network on the right. If only one dist_list_1 is supplied (i.e., dist_list_2 = NULL), then a traditional bipartite match is performed. Option <em>lambda</em> is a tuning parameter that controls the relative trade-off between two networks.</p>
+<p>We give some examples below to illustrate the usage.</p>
+<div id="example-i-optimal-macthing-within-propensity-score-caliper-rosenbaum-and-rubin-1985" class="section level3">
+<h3>Example I: Optimal Macthing within Propensity Score Caliper (Rosenbaum and Rubin, 1985)</h3>
+<p>The classical methodology can be recovered using the following code. Note that in this example, we only need to construct one distance list and the match is a bipartite one.</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a><span class="co"># Construct a distance list representing the network structure on the left.</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a>dist_list_pscore =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, <span class="dt">exact =</span> <span class="ot">NULL</span>, </span>
+<span id="cb26-3"><a href="#cb26-3"></a>                                       <span class="dt">p =</span> propensity, </span>
+<span id="cb26-4"><a href="#cb26-4"></a>                                       <span class="dt">caliper_low =</span> <span class="fl">0.008</span>, </span>
+<span id="cb26-5"><a href="#cb26-5"></a>                                       <span class="dt">k =</span> <span class="ot">NULL</span>, </span>
+<span id="cb26-6"><a href="#cb26-6"></a>                                       <span class="dt">method =</span> <span class="st">&#39;maha&#39;</span>)</span>
+<span id="cb26-7"><a href="#cb26-7"></a></span>
+<span id="cb26-8"><a href="#cb26-8"></a><span class="co"># Perform matching. Set dist_list_2 = NULL as we are </span></span>
+<span id="cb26-9"><a href="#cb26-9"></a><span class="co"># performing a bipartite matching.</span></span>
+<span id="cb26-10"><a href="#cb26-10"></a>matching_output_ex1 =<span class="st"> </span><span class="kw">match_2C_list</span>(Z, dt_Rouse, dist_list_pscore, </span>
+<span id="cb26-11"><a href="#cb26-11"></a>                                    <span class="dt">dist_list_2 =</span> <span class="ot">NULL</span>, </span>
+<span id="cb26-12"><a href="#cb26-12"></a>                                    <span class="dt">controls =</span> <span class="dv">1</span>)</span></code></pre></div>
+</div>
+<div id="example-ii-optimal-macthing-on-the-left-and-stringent-propensity-score-caliper-on-the-right" class="section level3">
+<h3>Example II: Optimal Macthing on the Left and Stringent Propensity Score Caliper on the Right</h3>
+<p>We remove the propensity score caliper in the left network and put a more stringent one on the right. This allows the algorithm to separate close pairing (using the Mahalanobis distance on the left) and balancing (using a stringent propensity score caliper on the right). One may check that in this example, this little trick does simultaneously improve the closeness in pairing AND the overall balance.</p>
+<p>Note that we make the propensity score caliper on the right a soft caliper (by setting penalty = 100 instead of the detaul Inf) to ensure feasibility.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1"></a><span class="co"># Mahalanobis distance on all variables; no caliper</span></span>
+<span id="cb27-2"><a href="#cb27-2"></a>dist_list_no_caliper =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, <span class="dt">exact =</span> <span class="ot">NULL</span>, </span>
+<span id="cb27-3"><a href="#cb27-3"></a>                                                <span class="dt">p =</span> <span class="ot">NULL</span>, </span>
+<span id="cb27-4"><a href="#cb27-4"></a>                                                <span class="dt">method =</span> <span class="st">&#39;maha&#39;</span>)</span>
+<span id="cb27-5"><a href="#cb27-5"></a></span>
+<span id="cb27-6"><a href="#cb27-6"></a><span class="co"># Connect treated to controls within a stringent propensity score caliper.</span></span>
+<span id="cb27-7"><a href="#cb27-7"></a><span class="co"># We use a soft caliper here to ensure feasibility.</span></span>
+<span id="cb27-8"><a href="#cb27-8"></a>dist_list_<span class="dv">2</span> =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(<span class="dt">Z =</span> Z, <span class="dt">X =</span> <span class="kw">rep</span>(<span class="dv">1</span>, <span class="kw">length</span>(Z)), </span>
+<span id="cb27-9"><a href="#cb27-9"></a>                                       <span class="dt">exact =</span> <span class="ot">NULL</span>,</span>
+<span id="cb27-10"><a href="#cb27-10"></a>                                       <span class="dt">p =</span> propensity, </span>
+<span id="cb27-11"><a href="#cb27-11"></a>                                       <span class="dt">caliper_low =</span> <span class="fl">0.002</span>, </span>
+<span id="cb27-12"><a href="#cb27-12"></a>                                       <span class="dt">method =</span> <span class="st">&#39;L1&#39;</span>, </span>
+<span id="cb27-13"><a href="#cb27-13"></a>                                       <span class="dt">k =</span> <span class="ot">NULL</span>,</span>
+<span id="cb27-14"><a href="#cb27-14"></a>                                       <span class="dt">penalty =</span> <span class="dv">100</span>)</span>
+<span id="cb27-15"><a href="#cb27-15"></a></span>
+<span id="cb27-16"><a href="#cb27-16"></a>matching_output_ex2 =<span class="st"> </span><span class="kw">match_2C_list</span>(Z, dt_Rouse, </span>
+<span id="cb27-17"><a href="#cb27-17"></a>                                    dist_list_no_caliper, </span>
+<span id="cb27-18"><a href="#cb27-18"></a>                                    dist_list_<span class="dv">2</span>, </span>
+<span id="cb27-19"><a href="#cb27-19"></a>                                    <span class="dt">lambda =</span> <span class="dv">1000</span>, <span class="dt">controls =</span> <span class="dv">1</span>)</span></code></pre></div>
+</div>
+</div>
+</div>
+<div id="example-iii-exact-matching-on-one-or-more-variable-while-balancing-others" class="section level1">
+<h1>Example III: Exact Matching on One (or More) Variable while Balancing Others</h1>
+<p>Suppose we would like to construct an optimal pair matching and insist two subjects in the same matched pair match exactly on father’s and mother’s education. We compare two implementations below. Our first implementation is a conventional one based on a bipartite graph:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a><span class="co"># Mahalanobis distance with exact matching on dadeduc and momeduc</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a>dist_list_<span class="dv">1</span> =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, <span class="dt">exact =</span> <span class="kw">c</span>(<span class="st">&#39;dadeduc&#39;</span>, <span class="st">&#39;momeduc&#39;</span>), </span>
+<span id="cb28-3"><a href="#cb28-3"></a>                                       <span class="dt">p =</span> propensity, <span class="dt">caliper_low =</span> <span class="fl">0.05</span>, </span>
+<span id="cb28-4"><a href="#cb28-4"></a>                                       <span class="dt">method =</span> <span class="st">&#39;maha&#39;</span>)</span>
+<span id="cb28-5"><a href="#cb28-5"></a></span>
+<span id="cb28-6"><a href="#cb28-6"></a>matching_output_ex3_<span class="dv">1</span> =<span class="st"> </span><span class="kw">match_2C_list</span>(Z, dt_Rouse, dist_list_<span class="dv">1</span>, </span>
+<span id="cb28-7"><a href="#cb28-7"></a>                                  <span class="dt">dist_list_2 =</span> <span class="ot">NULL</span>, <span class="dt">lambda =</span> <span class="ot">NULL</span>)</span></code></pre></div>
+<p>Our second implementation uses the distance list on the left to ensure exact matching and the distance list on the right to balance the other covariates.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1"></a><span class="co"># Maha distance with exact matching on dadeduc and momeduc</span></span>
+<span id="cb29-2"><a href="#cb29-2"></a>dist_list_<span class="dv">1</span> =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X, </span>
+<span id="cb29-3"><a href="#cb29-3"></a>                                       <span class="dt">exact =</span> <span class="kw">c</span>(<span class="st">&#39;dadeduc&#39;</span>, <span class="st">&#39;momeduc&#39;</span>), </span>
+<span id="cb29-4"><a href="#cb29-4"></a>                                       <span class="dt">method =</span> <span class="st">&#39;maha&#39;</span>)</span>
+<span id="cb29-5"><a href="#cb29-5"></a></span>
+<span id="cb29-6"><a href="#cb29-6"></a><span class="co"># Maha distance on all other variables</span></span>
+<span id="cb29-7"><a href="#cb29-7"></a>dist_list_<span class="dv">2</span> =<span class="st"> </span><span class="kw">create_list_from_scratch</span>(Z, X[, <span class="kw">c</span>(<span class="st">&#39;female&#39;</span>, <span class="st">&#39;black&#39;</span>, <span class="st">&#39;bytest&#39;</span>, <span class="st">&#39;fincome&#39;</span>)], </span>
+<span id="cb29-8"><a href="#cb29-8"></a>                                       <span class="dt">p =</span> propensity, </span>
+<span id="cb29-9"><a href="#cb29-9"></a>                                       <span class="dt">caliper_low =</span> <span class="fl">0.05</span>, </span>
+<span id="cb29-10"><a href="#cb29-10"></a>                                       <span class="dt">method =</span> <span class="st">&#39;maha&#39;</span>)</span>
+<span id="cb29-11"><a href="#cb29-11"></a></span>
+<span id="cb29-12"><a href="#cb29-12"></a>matching_output_ex3_<span class="dv">2</span> =<span class="st"> </span><span class="kw">match_2C_list</span>(Z, dt_Rouse, dist_list_<span class="dv">1</span>, dist_list_<span class="dv">2</span>, <span class="dt">lambda =</span> <span class="dv">100</span>)</span></code></pre></div>
+<p>One can easily verify that both implementations match exactly on <em>dadeduc</em> and <em>momeduc</em>; however, the second implementation achieves better overall balance.</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a>tb_ex3_<span class="dv">1</span> =<span class="st"> </span><span class="kw">check_balance</span>(Z, matching_output_ex3_<span class="dv">1</span>, </span>
+<span id="cb30-2"><a href="#cb30-2"></a>                        <span class="dt">cov_list =</span> <span class="kw">c</span>(<span class="st">&#39;female&#39;</span>, <span class="st">&#39;black&#39;</span>, <span class="st">&#39;bytest&#39;</span>, <span class="st">&#39;fincome&#39;</span>, </span>
+<span id="cb30-3"><a href="#cb30-3"></a>                                     <span class="st">&#39;dadeduc&#39;</span>, <span class="st">&#39;momeduc&#39;</span>, <span class="st">&#39;propensity&#39;</span>),</span>
+<span id="cb30-4"><a href="#cb30-4"></a>                        <span class="dt">plot_propens =</span> <span class="ot">TRUE</span>, <span class="dt">propens =</span> propensity)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1"></a></span>
+<span id="cb31-2"><a href="#cb31-2"></a><span class="kw">print</span>(tb_ex3_<span class="dv">1</span>, <span class="dt">digits =</span> <span class="dv">4</span>)</span>
+<span id="cb31-3"><a href="#cb31-3"></a><span class="co">#&gt;            Before (Z = 1) Before (Z = 0) Std. Diff After (Z = 1) After (Z = 0)</span></span>
+<span id="cb31-4"><a href="#cb31-4"></a><span class="co">#&gt; female          5.802e-01      5.577e-01   0.03214     5.802e-01     5.865e-01</span></span>
+<span id="cb31-5"><a href="#cb31-5"></a><span class="co">#&gt; black           1.907e-01      1.849e-01   0.01063     1.907e-01     1.872e-01</span></span>
+<span id="cb31-6"><a href="#cb31-6"></a><span class="co">#&gt; bytest          5.188e+01      5.304e+01  -0.09760     5.188e+01     5.255e+01</span></span>
+<span id="cb31-7"><a href="#cb31-7"></a><span class="co">#&gt; fincome         2.163e+04      2.344e+04  -0.07217     2.163e+04     2.123e+04</span></span>
+<span id="cb31-8"><a href="#cb31-8"></a><span class="co">#&gt; dadeduc         1.102e+00      1.171e+00  -0.04092     1.102e+00     1.102e+00</span></span>
+<span id="cb31-9"><a href="#cb31-9"></a><span class="co">#&gt; momeduc         9.349e-01      9.958e-01  -0.03750     9.349e-01     9.349e-01</span></span>
+<span id="cb31-10"><a href="#cb31-10"></a><span class="co">#&gt; propensity      3.733e-01      3.672e-01   0.11463     3.733e-01     3.714e-01</span></span>
+<span id="cb31-11"><a href="#cb31-11"></a><span class="co">#&gt;            Std. Diff</span></span>
+<span id="cb31-12"><a href="#cb31-12"></a><span class="co">#&gt; female     -0.008907</span></span>
+<span id="cb31-13"><a href="#cb31-13"></a><span class="co">#&gt; black       0.006453</span></span>
+<span id="cb31-14"><a href="#cb31-14"></a><span class="co">#&gt; bytest     -0.056290</span></span>
+<span id="cb31-15"><a href="#cb31-15"></a><span class="co">#&gt; fincome     0.015948</span></span>
+<span id="cb31-16"><a href="#cb31-16"></a><span class="co">#&gt; dadeduc     0.000000</span></span>
+<span id="cb31-17"><a href="#cb31-17"></a><span class="co">#&gt; momeduc     0.000000</span></span>
+<span id="cb31-18"><a href="#cb31-18"></a><span class="co">#&gt; propensity  0.036155</span></span>
+<span id="cb31-19"><a href="#cb31-19"></a></span>
+<span id="cb31-20"><a href="#cb31-20"></a>tb_ex3_<span class="dv">2</span> =<span class="st"> </span><span class="kw">check_balance</span>(Z, matching_output_ex3_<span class="dv">2</span>, </span>
+<span id="cb31-21"><a href="#cb31-21"></a>                        <span class="dt">cov_list =</span> <span class="kw">c</span>(<span class="st">&#39;female&#39;</span>, <span class="st">&#39;black&#39;</span>, <span class="st">&#39;bytest&#39;</span>, <span class="st">&#39;fincome&#39;</span>, </span>
+<span id="cb31-22"><a href="#cb31-22"></a>                                     <span class="st">&#39;dadeduc&#39;</span>, <span class="st">&#39;momeduc&#39;</span>, <span class="st">&#39;propensity&#39;</span>),</span>
+<span id="cb31-23"><a href="#cb31-23"></a>                        <span class="dt">plot_propens =</span> <span class="ot">TRUE</span>, <span class="dt">propens =</span> propensity)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a><span class="kw">print</span>(tb_ex3_<span class="dv">2</span>, <span class="dt">digits =</span> <span class="dv">4</span>)</span>
+<span id="cb32-2"><a href="#cb32-2"></a><span class="co">#&gt;            Before (Z = 1) Before (Z = 0) Std. Diff After (Z = 1) After (Z = 0)</span></span>
+<span id="cb32-3"><a href="#cb32-3"></a><span class="co">#&gt; female          5.802e-01      5.577e-01   0.03214     5.802e-01     5.802e-01</span></span>
+<span id="cb32-4"><a href="#cb32-4"></a><span class="co">#&gt; black           1.907e-01      1.849e-01   0.01063     1.907e-01     1.907e-01</span></span>
+<span id="cb32-5"><a href="#cb32-5"></a><span class="co">#&gt; bytest          5.188e+01      5.304e+01  -0.09760     5.188e+01     5.203e+01</span></span>
+<span id="cb32-6"><a href="#cb32-6"></a><span class="co">#&gt; fincome         2.163e+04      2.344e+04  -0.07217     2.163e+04     2.164e+04</span></span>
+<span id="cb32-7"><a href="#cb32-7"></a><span class="co">#&gt; dadeduc         1.102e+00      1.171e+00  -0.04092     1.102e+00     1.102e+00</span></span>
+<span id="cb32-8"><a href="#cb32-8"></a><span class="co">#&gt; momeduc         9.349e-01      9.958e-01  -0.03750     9.349e-01     9.349e-01</span></span>
+<span id="cb32-9"><a href="#cb32-9"></a><span class="co">#&gt; propensity      3.733e-01      3.672e-01   0.11463     3.733e-01     3.727e-01</span></span>
+<span id="cb32-10"><a href="#cb32-10"></a><span class="co">#&gt;             Std. Diff</span></span>
+<span id="cb32-11"><a href="#cb32-11"></a><span class="co">#&gt; female      0.0000000</span></span>
+<span id="cb32-12"><a href="#cb32-12"></a><span class="co">#&gt; black       0.0000000</span></span>
+<span id="cb32-13"><a href="#cb32-13"></a><span class="co">#&gt; bytest     -0.0122345</span></span>
+<span id="cb32-14"><a href="#cb32-14"></a><span class="co">#&gt; fincome    -0.0004089</span></span>
+<span id="cb32-15"><a href="#cb32-15"></a><span class="co">#&gt; dadeduc     0.0000000</span></span>
+<span id="cb32-16"><a href="#cb32-16"></a><span class="co">#&gt; momeduc     0.0000000</span></span>
+<span id="cb32-17"><a href="#cb32-17"></a><span class="co">#&gt; propensity  0.0104007</span></span></code></pre></div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

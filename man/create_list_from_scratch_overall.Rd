@@ -50,30 +50,3 @@ a possibly sparse list representation of the distance matrix with
 Mahalanobis distance. Note that this function is of limited interest
 to most users.
 }
-\examples{
-# We first prepare the input X, Z, propensity score
-
-attach(dt_Rouse)
-X = cbind(female,black,bytest,dadeduc,momeduc,fincome)
-Z = IV
-propensity = glm(IV~female+black+bytest+dadeduc+momeduc+fincome,
-                family=binomial)$fitted.values
-detach(dt_Rouse)
-
-# Define a Mahalanobis-distance function
-
-cov_matrix = chol(cov(X))
-compute_maha_dist <- function(X_control, X_treated_i){
- return(mvnfast::maha(X_control, t(as.matrix(X_treated_i)), cov_matrix, isChol=TRUE))
-}
-
-# create a distance list using distance function compute_maha_dist
-output = create_list_from_scratch_overall(Z, X, p = propensity,
-                               caliper_low = 0.05, k = 100,
-                               dist_func = compute_maha_dist)
-
-
-# More examples, including how to use a user-supplied
-# distance function, can be found in the accompanying RMarkdown tutorial.
-
-}

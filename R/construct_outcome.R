@@ -2,7 +2,6 @@
 #'
 #'This function constructs the output given the relaxsolution
 #'to the associated network flow problem and the original dataset.
-#'This function is typically of little interest to users.
 #'
 #'
 #'
@@ -15,9 +14,9 @@
 #'
 #'@return  This function returns a list of three objects: 1) feasible: 0/1 depending on the
 #'feasibility of the matching problem; 2) data_with_matched_set_ind: a dataframe that is the
-#'same as the original dataframe, except that a column called matched_set and a column
-#'called distance are added to it. The column matched_set assigns 1,2,...,n_t to each matched
-#'set, and NA to those not matched to any treated. Variable distance records the distance
+#'same as the original dataframe, except that a column called ``matched_set'' and a column
+#'called ``distance'' are added to it. ``matched_set'' column assigns 1,2,...,n_t to each matched
+#'set, and NA to those not matched to any treated. Variable ``distance'' records the distance
 #'(as specified in the left network) between each matched control and the treated, and assigns NA
 #'to all treated and cotnrols that are left unmatched. If matching is not feasible, NULL will be returned;
 #'3) matched_data_in_order:a dataframe organized in the order of matched sets and otherwise the
@@ -31,7 +30,7 @@
 
 construct_outcome <- function(res, dist_list_1, Z, dataset, controls = 1){
   if (identical(res, 'Not feasible')){
-    message('The matching is not feasible. Please specify a large caliper and/or k.')
+    cat('The matching is not feasible. Please specify a large caliper and/or k.')
     return(list(feasible = 0,
                 data_with_matched_set_ind = NULL,
                 matched_data_in_order = NULL,

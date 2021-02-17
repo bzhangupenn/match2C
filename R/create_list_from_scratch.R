@@ -10,7 +10,7 @@
 #'are the same), 'Hamming' (Hamming distance).
 #'
 #'User can also supply their own distance function by setting method = 'other' and
-#'using the argument dist_func. ``dist_func'' is a user-supplied distance
+#'using the argument ``dist_func''. ``dist_func'' is a user-supplied distance
 #'function in the following format:
 #'dist_func(controls, treated), where treated is a length-p vector
 #'of covaraites and controls is a n_c-by-p matrix of covariates.
@@ -32,7 +32,7 @@
 #'@param p A length-n vector on which a caliper applies, e.g. a vector of propensity score.
 #'@param caliper_low Size of caliper low.
 #'@param caliper_high Size of caliper high.
-#'@param k Connect each treated to the nearest k controls. See detaisl section.
+#'@param k Connect each treated to the nearest k controls. See details section.
 #'@param alpha Tuning parameter.
 #'@param penalty Penalty for violating the caliper. Set to Inf by default.
 #'@param method Method used to compute treated-control distance
@@ -63,7 +63,7 @@
 #'
 #'
 #'# More examples, including how to use a user-supplied
-#'# distance function, can be found in the accompanying RMarkdown tutorial.
+#'# distance function, can be found in the vignette.
 #'
 #'@importFrom mvnfast maha
 #'@importFrom stats cov var
@@ -177,7 +177,7 @@ create_list_from_scratch <- function(Z, X, exact = NULL, soft_exact = FALSE,
 
 
   if (is.character(output)) {
-    message("Hard caliper fails. Please specify a soft caliper.", '\n')
+    cat("Hard caliper fails. Please specify a soft caliper.", '\n')
     return(NA)
   }
   else {

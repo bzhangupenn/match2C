@@ -24,31 +24,6 @@
 #'@return  This function returns a list of three objects: start_n, end_n, and d.
 #'         See documentation of function ``create_list_from_mat'' for more details.
 #'
-#'@examples
-#'# We first prepare the input X, Z, propensity score
-#'
-#'attach(dt_Rouse)
-#'X = cbind(female,black,bytest,dadeduc,momeduc,fincome)
-#'Z = IV
-#'propensity = glm(IV~female+black+bytest+dadeduc+momeduc+fincome,
-#'                 family=binomial)$fitted.values
-#'detach(dt_Rouse)
-#'
-#'# Define a Mahalanobis-distance function
-#'
-#' cov_matrix = chol(cov(X))
-#' compute_maha_dist <- function(X_control, X_treated_i){
-#'  return(mvnfast::maha(X_control, t(as.matrix(X_treated_i)), cov_matrix, isChol=TRUE))
-#'}
-#'
-#'# create a distance list using distance function compute_maha_dist
-#'output = create_list_from_scratch_overall(Z, X, p = propensity,
-#'                                caliper_low = 0.05, k = 100,
-#'                                dist_func = compute_maha_dist)
-#'
-#'
-#'# More examples, including how to use a user-supplied
-#'# distance function, can be found in the accompanying RMarkdown tutorial.
 #'
 #'@importFrom mvnfast maha
 #'@importFrom stats cov var

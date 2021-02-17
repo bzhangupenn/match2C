@@ -23,4 +23,5 @@
 #'
 #'@format A data frame with 3037 rows, 8 observed variables, 1 binary instrumental variable,
 #'  1 treatment, and 1 continuous response.
+#'@source ss
 "dt_Rouse"

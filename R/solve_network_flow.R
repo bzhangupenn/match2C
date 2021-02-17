@@ -3,10 +3,9 @@
 #'This function solves network flow optimization problems
 #'by calling the RELAX-IV algorithm implemented in FORTRAN
 #'by Dimitri Bertsekas and Paul Tseng, and made available by
-#'Sam Pimentel in the package rcbalance. This function is of
-#'limited interest to users.
+#'Sam Pimentel in the package rcbalance.
 #'
-#'
+#'This function is of limited interest to users.
 #'
 #'@param net A list of five vectors: startn, endn, ucap, cost, b.
 #'

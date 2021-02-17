@@ -38,36 +38,36 @@
 #'
 #'@examples
 #'\dontrun{
-#'# To run the following code, one needs to first install
-#'# and load the package optmatch.
+#'To run the following code, one needs to first install
+#'and load the package optmatch.
 #'
 #'# We first prepare the input X, Z, propensity score
 #'
-#' attach(dt_Rouse)
-#' X = cbind(female,black,bytest,dadeduc,momeduc,fincome)
-#' Z = IV
-#' propensity = glm(IV~female+black+bytest+dadeduc+momeduc+fincome,
-#' family=binomial)$fitted.values
-#' n_t = sum(Z)
-#' n_c = length(Z) - n_t
-#' dt_Rouse$propensity = propensity
-#' detach(dt_Rouse)
+#' #attach(dt_Rouse)
+#' #X = cbind(female,black,bytest,dadeduc,momeduc,fincome)
+#' #Z = IV
+#' #propensity = glm(IV~female+black+bytest+dadeduc+momeduc+fincome,
+#' #family=binomial)$fitted.values
+#' #n_t = sum(Z)
+#' #n_c = length(Z) - n_t
+#' #dt_Rouse$propensity = propensity
+#' #detach(dt_Rouse)
 #'
 #'# Next, we use the match_on function in optmatch
-#'# to create two treated-by-control distance matrices.
+#'to create two treated-by-control distance matrices.
 #'
-#'library(optmatch)
-#' dist_mat_1 = match_on(IV~female+black+bytest+dadeduc+momeduc+fincome,
-#' method = 'mahalanobis', data = dt_Rouse)
+#'#library(optmatch)
+#'# dist_mat_1 = match_on(IV~female+black+bytest+dadeduc+momeduc+fincome,
+#'# method = 'mahalanobis', data = dt_Rouse)
 #'
-#' dist_mat_2 = match_on(IV ~ female, method = 'euclidean', data = dt_Rouse)
+#'# dist_mat_2 = match_on(IV ~ female, method = 'euclidean', data = dt_Rouse)
 #'
 #'
 #' # Feed two distance matrices to the function match_2C_mat without caliper
 #' # and a large penalty lambda to enforce (near-)fine balance.
 #'
-#' matching_output = match_2C_mat(Z, dt_Rouse, dist_mat_1, dist_mat_2,
-#'                               lambda = 10000, p_1 = NULL, p_2 = NULL)
+#' #matching_output = match_2C_mat(Z, dt_Rouse, dist_mat_1, dist_mat_2,
+#'#                               lambda = 10000, p_1 = NULL, p_2 = NULL)
 #'
 #' # For more examples, please consult the RMarkdown tutorial.
 #'}
@@ -114,14 +114,14 @@ match_2C_mat <- function(Z, dataset, dist_mat_1, dist_mat_2,
     names(dist_list_2) = c('start_n', 'end_n', 'd')
   }
 
-  #cat('Finish converting distance matrices to lists', '\n')
+  cat('Finish converting distance matrices to lists', '\n')
 
   net1 = treated_control_net(n_t, n_c, dist_list_1, controls)
   net2 = treated_control_net(n_c, n_t, dist_list_2, controls)
   net = stitch_two_nets(net1, net2, lambda, controls, overflow)
-  #cat('Solving the network flow problem', '\n')
+  cat('Solving the network flow problem', '\n')
   res = solve_network_flow(net)
-  #cat('Finish solving the network flow problem', '\n')
+  cat('Finish solving the network flow problem', '\n')
 
   return(construct_outcome(res, dist_list_1, Z, dataset, controls))
 }

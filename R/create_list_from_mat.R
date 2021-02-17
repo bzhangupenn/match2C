@@ -37,36 +37,6 @@
 #'@return  This function returns a list that consists of three arguments: start_n, end_n, and d,
 #'         as described above.
 #'
-#'@examples
-#'\dontrun{
-#'#To run the following code, one needs to first install
-#'#and load the package optmatch.
-#'
-#'# We first prepare the input X, Z, propensity score
-#'
-#' attach(dt_Rouse)
-#' X = cbind(female,black,bytest,dadeduc,momeduc,fincome)
-#' Z = IV
-#' propensity = glm(IV~female+black+bytest+dadeduc+momeduc+fincome,
-#' family=binomial)$fitted.values
-#' n_t = sum(Z)
-#' n_c = length(Z) - n_t
-#' dt_Rouse$propensity = propensity
-#' detach(dt_Rouse)
-#'
-#'# Next, we use the match_on function in optmatch
-#'# to create two treated-by-control distance matrices.
-#'
-#'library(optmatch)
-#' dist_mat_1 = match_on(IV~female+black+bytest+dadeduc+momeduc+fincome,
-#' method = 'mahalanobis', data = dt_Rouse)
-#'
-#' # Convert the distance matrix to a distance list
-#' dist_list_1 = create_list_from_mat(Z, dist_mat_1, p = NULL)
-#'
-#' # For more examples, please consult the RMarkdown tutorial.
-#'}
-#'
 #'@export
 
 create_list_from_mat <- function(Z, dist_mat, p = NULL, caliper = NULL, k = NULL, penalty = Inf){
@@ -104,7 +74,7 @@ create_list_from_mat <- function(Z, dist_mat, p = NULL, caliper = NULL, k = NULL
 
       #If ind_control_within_caliper = NULL, add three smallest in p_diff
       if (length(ind_control_within_caliper) < 1){
-        message('Hard caliper fails. Please specify a soft caliper.', '\n')
+        cat('Hard caliper fails. Please specify a soft caliper.', '\n')
         return(NA)
       }
 

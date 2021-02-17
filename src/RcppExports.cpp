@@ -6,27 +6,17 @@
 using namespace Rcpp;
 
 // revert_dist_list_cpp
-List revert_dist_list_cpp(int n_t, int n_c, NumericVector startn, NumericVector endn, NumericVector d);
+List revert_dist_list_cpp(int n_t, int n_c, std::vector<int> startn, std::vector<int> endn, std::vector<double> d);
 RcppExport SEXP _match2C_revert_dist_list_cpp(SEXP n_tSEXP, SEXP n_cSEXP, SEXP startnSEXP, SEXP endnSEXP, SEXP dSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type n_t(n_tSEXP);
     Rcpp::traits::input_parameter< int >::type n_c(n_cSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type startn(startnSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type endn(endnSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type d(dSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type startn(startnSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type endn(endnSEXP);
+    Rcpp::traits::input_parameter< std::vector<double> >::type d(dSEXP);
     rcpp_result_gen = Rcpp::wrap(revert_dist_list_cpp(n_t, n_c, startn, endn, d));
     return rcpp_result_gen;
 END_RCPP
-}
-
-static const R_CallMethodDef CallEntries[] = {
-    {"_match2C_revert_dist_list_cpp", (DL_FUNC) &_match2C_revert_dist_list_cpp, 5},
-    {NULL, NULL, 0}
-};
-
-RcppExport void R_init_match2C(DllInfo *dll) {
-    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
-    R_useDynamicSymbols(dll, FALSE);
 }

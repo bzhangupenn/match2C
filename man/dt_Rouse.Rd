@@ -4,8 +4,13 @@
 \name{dt_Rouse}
 \alias{dt_Rouse}
 \title{Rouse (1995) dataset}
-\format{A data frame with 3037 rows, 8 observed variables, 1 binary instrumental variable,
- 1 treatment, and 1 continuous response.}
+\format{
+A data frame with 3037 rows, 8 observed variables, 1 binary instrumental variable,
+ 1 treatment, and 1 continuous response.
+}
+\source{
+ss
+}
 \usage{
 data(dt_Rouse)
 }

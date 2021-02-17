@@ -25,32 +25,6 @@
 #'@param overflow A logical value indicating if overflow protection is turned on.
 
 #'
-#'@examples
-#'
-#'# We first prepare the input X, Z, propensity score
-#'
-#'attach(dt_Rouse)
-#'X = cbind(female,black,bytest,dadeduc,momeduc,fincome)
-#'Z = IV
-#'propensity = glm(IV~female+black+bytest+dadeduc+momeduc+fincome,
-#'                 family=binomial)$fitted.values
-#'detach(dt_Rouse)
-#'
-#'# We next create two list representations of distance matrices
-#'# using function create_list_from_scratch. See its focumentation
-#'# for more details on using different methods and calipers.
-#'
-#'# Caveate: please switch the role of treatment and control when
-#'# construcitg the second list. Simply let Z = 1 - Z.
-#'
-#' dist_list_pscore = create_list_from_scratch(Z, X, exact = NULL,
-#'                    p = propensity, caliper_low = 0.03, k = 100,
-#'                    method = 'maha')
-#' matching_output = match_2C_list(Z, dt_Rouse,
-#'                  dist_list_pscore)
-#'
-#' # Please refer to the RMarkdown tutorial for more examples.
-#'
 #'@return  This function returns the same object as function match_2C_mat.
 #'@export
 
@@ -66,6 +40,12 @@ match_2C_list <- function(Z, dataset, dist_list_1, dist_list_2 = NULL,
     res = solve_network_flow(net1)
     #cat('Finish solving the network flow problem', '\n')
   } else {
+    dist_list_2 = revert_dist_list_cpp(n_t, n_c,
+                                       dist_list_2$start_n,
+                                       dist_list_2$end_n,
+                                       dist_list_2$d)
+    names(dist_list_2) = c('start_n', 'end_n', 'd')
+
     net2 = treated_control_net(n_c, n_t, dist_list_2, controls)
     net = stitch_two_nets(net1, net2, lambda, controls, overflow)
     #cat('Solving the network flow problem', '\n')
