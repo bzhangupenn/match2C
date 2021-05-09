@@ -31,7 +31,7 @@ This function returns a list that consists of three arguments: start_n, end_n, a
         as described above.
 }
 \description{
-This function creates a ``list representations''
+This function creates a ``list representation''
 of a treatment-by-control distance matrix.
 }
 \details{
@@ -51,10 +51,13 @@ Node 1,2,...,n_t are n_t treatment nodes; n_t + 1, n_t + 2, ..., n_t + n_c
 are n_c control nodes. start_n, end_n, and d should have the same lengths,
 all of which equal to the number of edges.
 
-There are two options for users to make a network sparse. First, caliper
+There are two options for users to make a network sparse. Option caliper
 is a value applied to the vector p to avoid connecting treated to controls
-whose covariate/propensity score defined by p is outside p +/- caliper.
-Second, within a specified caliper, sometimes there are too many controls
-connected to the treated, and we can further trim down this number up to k
-with resctricting attention to the k nearest (in p) to each treated.
+whose covariate or propensity score defined by p is outside p +/- caliper.
+Second, within a specified caliper, sometimes there are still too many controls
+connected to each treated, and we can further trim down this number up to k
+by restricting our attention to the k nearest (in p) to each treated.
+
+By default a hard caliper is applied, i.e., option penalty is set to Inf by default.
+Users may make the caliper a soft one by setting penalty to a large yet finite number.
 }

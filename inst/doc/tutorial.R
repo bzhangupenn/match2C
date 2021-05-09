@@ -1,13 +1,14 @@
 ## ---- include = FALSE---------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
-  fig.width=6.5, 
-  fig.height=4.3, 
+  fig.width=7.5, 
+  fig.height=5, 
   comment = "#>"
 )
 
 ## ----setup--------------------------------------------------------------------
-options(digits=4)
+options(scipen = 99)
+options(digits = 3)
 library(match2C)
 library(ggplot2)
 
@@ -52,10 +53,9 @@ head(matching_output_example$matched_data_in_order, 6)
 
 ## ----intro example check balance table, echo=TRUE-----------------------------
 tb_example = check_balance(Z, matching_output_example, 
-              cov_list = c('female', 'black', 'bytest', 'fincome', 
-                           'dadeduc', 'momeduc', 'propensity'),
+              cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
               plot_propens = FALSE)
-print(tb_example, digits = 4)
+print(tb_example)
 
 ## ----intro example check balance plot, echo=TRUE------------------------------
 tb_example = check_balance(Z, matching_output_example, 
@@ -65,14 +65,30 @@ tb_example = check_balance(Z, matching_output_example,
 
 ## ----match2C no caliper, echo=TRUE--------------------------------------------
 # Perform a matching with minimal input
-matching_output = match_2C(Z = Z, X = X, 
+matching_output = match_2C(Z = Z, X = X, method = 'robust maha',
                            propensity = propensity, 
                            dataset = dt_Rouse)
 tb = check_balance(Z, matching_output, 
-                   cov_list = c('female', 'black', 'bytest', 'fincome', 
-                                'dadeduc', 'momeduc', 'propensity'),
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                    plot_propens = TRUE, propens = propensity)
-print(tb, digits = 4)
+print(tb)
+
+## ----match2c exact------------------------------------------------------------
+# Perform a matching with minimal input
+matching_output_with_exact = match_2C(Z = Z, X = X, exact = c('dadeduc', 'momeduc'),
+                           propensity = propensity, 
+                           dataset = dt_Rouse)
+
+# Check exact matching
+head(matching_output_with_exact$matched_data_in_order[, c('female', 'black', 'bytest', 
+                                      'fincome', 'dadeduc', 'momeduc', 
+                                      'propensity', 'IV', 'matched_set')])
+
+# Check overall balance
+tb = check_balance(Z, matching_output_with_exact, 
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+                   plot_propens = TRUE, propens = propensity)
+
 
 ## ----match2C fine balance, echo=TRUE------------------------------------------
 # Perform a matching with fine balance
@@ -84,10 +100,9 @@ matching_output2 = match_2C(Z = Z, X = X,
 ## ----match2C fine balance check, echo=TRUE------------------------------------
 # Perform a matching with fine balance
 tb2 = check_balance(Z, matching_output2, 
-                   cov_list = c('female', 'black', 'bytest', 'fincome', 
-                                'dadeduc', 'momeduc', 'propensity'),
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                    plot_propens = TRUE, propens = propensity)
-print(tb2, digits = 4)
+print(tb2)
 
 ## ----match2C fine balance 2, echo=TRUE----------------------------------------
 # Perform a matching with fine balance on dadeduc and moneduc
@@ -96,10 +111,9 @@ matching_output3 = match_2C(Z = Z, X = X,
                             dataset = dt_Rouse,
                             fb_var = c('dadeduc', 'momeduc'))
 tb3 = check_balance(Z, matching_output2, 
-                   cov_list = c('female', 'black', 'bytest', 'fincome', 
-                                'dadeduc', 'momeduc', 'propensity'),
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                    plot_propens = FALSE)
-print(tb3, digits = 4)
+print(tb3)
 
 ## ----match2C with or without caliper speed, echo=TRUE-------------------------
 # Timing the vanilla match2C function
@@ -134,6 +148,24 @@ matching_output_unfeas = match_2C(Z = Z, X = X, propensity = propensity,
                                   dataset = dt_Rouse,
                                   caliper_left = 0.001)
 
+## ----match2C force control, echo=TRUE-----------------------------------------
+
+# Create a binary vector with 1's in the first 100 entries and 0 otherwise
+# length(include_vec) = n_c
+
+include_vec = c(rep(1, 100), rep(0, n_c - 100))
+# Perform a matching with minimal input
+matching_output_force_include = match_2C(Z = Z, X = X, 
+                           propensity = propensity, 
+                           dataset = dt_Rouse, 
+                           include = include_vec)
+
+## ----match2C force control 2, echo=TRUE---------------------------------------
+
+matched_data = matching_output_force_include$data_with_matched_set_ind
+matched_data_control = matched_data[matched_data$IV == 0,]
+head(matched_data_control) # Check the matched_set column
+
 ## ----mat no caliper, echo=TRUE------------------------------------------------
 # Construct a distance matrix based on Mahalanobis distance
 dist_mat_1 = optmatch::match_on(IV~female+black+bytest+dadeduc+momeduc+fincome, 
@@ -148,11 +180,10 @@ matching_output_mat = match_2C_mat(Z, dt_Rouse, dist_mat_1, dist_mat_2,
 
 # Examine the balance after matching
 tb_mat = check_balance(Z, matching_output_mat, 
-                   cov_list = c('female', 'black', 'bytest', 'fincome', 
-                                'dadeduc', 'momeduc', 'propensity'),
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                    plot_propens = FALSE)
 
-print(tb_mat, digits = 4)
+print(tb_mat)
 
 ## ----mat with caliper, echo=TRUE----------------------------------------------
 matching_output_mat_caliper = match_2C_mat(Z, dt_Rouse, 
@@ -301,16 +332,89 @@ matching_output_ex3_2 = match_2C_list(Z, dt_Rouse, dist_list_1, dist_list_2, lam
 
 ## ----dist list ex3 check balance, echo=TRUE-----------------------------------
 tb_ex3_1 = check_balance(Z, matching_output_ex3_1, 
-                        cov_list = c('female', 'black', 'bytest', 'fincome', 
-                                     'dadeduc', 'momeduc', 'propensity'),
+                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                         plot_propens = TRUE, propens = propensity)
 
-print(tb_ex3_1, digits = 4)
+print(tb_ex3_1)
 
 tb_ex3_2 = check_balance(Z, matching_output_ex3_2, 
-                        cov_list = c('female', 'black', 'bytest', 'fincome', 
-                                     'dadeduc', 'momeduc', 'propensity'),
+                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                         plot_propens = TRUE, propens = propensity)
-print(tb_ex3_2, digits = 4)
+print(tb_ex3_2)
 
+
+## ----dist list ex4, echo=TRUE-------------------------------------------------
+dist_list_1 = create_list_from_scratch(Z = Z, X = X, 
+                                       exact = c('female', 'black'),
+                                       p = propensity,
+                                       caliper_low = 0.15,
+                                       method = 'maha')
+
+dist_list_2 = create_list_from_scratch(Z = Z, X = X[, c('dadeduc', 'momeduc')],
+                                                  method = '0/1')
+matching_output_ex4 = match_2C_list(Z, dt_Rouse, dist_list_1, dist_list_2, lambda = 1000)
+
+tb_ex4 = check_balance(Z, matching_output_ex4, 
+                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+                        plot_propens = TRUE, propens = propensity)
+print(tb_ex4)
+
+
+## ----dist list ex5, echo=TRUE-------------------------------------------------
+
+# The first 50 controls must be included
+include_vec = c(rep(1, 50), rep(0, n_c - 50))
+
+# dist_list_1 and dist_list_2 are from example 4 above
+dist_list_1_update = force_control(dist_list_1, Z = Z, include = include_vec)
+dist_list_2_update = force_control(dist_list_2, Z = Z, include = include_vec)
+
+matching_output_ex5 = match_2C_list(Z, dt_Rouse, 
+                                    dist_list_1_update, 
+                                    dist_list_2_update, lambda = 1000)
+
+tb_ex5 = check_balance(Z, matching_output_ex5, 
+                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+                        plot_propens = TRUE, propens = propensity)
+print(tb_ex5)
+
+## ----dist list ex6, echo=TRUE-------------------------------------------------
+# Construct distance list on the left: Maha subject to pscore caliper
+dist_list_left = create_list_from_scratch(Z = Z, X = X,
+                                            exact = c('black'),
+                                            p = propensity,
+                                            caliper_low = 0.2,
+                                            method = 'maha')
+
+# Construct distance list on the right: L1 distance on the pscore plus fine balance
+dist_list_right_pscore = create_list_from_scratch(Z = Z, X = propensity,
+                                             p = propensity,
+                                             caliper_low = 1,
+                                             method = 'L1')
+
+dist_list_right_fb = create_list_from_scratch(Z = Z, X = X[, c('dadeduc')],
+                                                  p = propensity,
+                                                  caliper_low = 1,
+                                                  method = '0/1')
+
+dist_list_right = dist_list_right_pscore
+dist_list_right$d = dist_list_right$d + 100*dist_list_right_fb$d 
+
+
+# The first 50 controls must be included
+include_vec = c(rep(1, 50), rep(0, n_c - 50))
+
+# dist_list_1 and dist_list_2 are from example 4 above
+dist_list_left_update = force_control(dist_list_left, Z = Z, include = include_vec)
+dist_list_right_update = force_control(dist_list_right, Z = Z, include = include_vec)
+
+matching_output_ex6 = match_2C_list(Z = Z, dataset = dt_Rouse,
+                                  dist_list_1 = dist_list_left_update,
+                                  dist_list_2 = dist_list_right_update,
+                                  lambda = 100)
+
+tb_ex6 = check_balance(Z, matching_output_ex6, 
+                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+                        plot_propens = TRUE, propens = propensity)
+print(tb_ex6)
 

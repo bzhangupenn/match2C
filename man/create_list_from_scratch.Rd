@@ -56,11 +56,12 @@ a length-n vector of treatment indicator, a caliper, and construct
 a possibly sparse list representation of the distance matrix.
 }
 \details{
-Currently, there are 4 methods implemented in this function: 'maha' (Mahalanobis distance),
-'robust maha' (robust Mahalanobis distance), '0/1' (distance = 0 if and only if covariates
-are the same), 'Hamming' (Hamming distance).
+Currently, there are 4 methods implemented in this function: 'maha'
+(Mahalanobis distance), robust maha' (robust Mahalanobis distance),
+'0/1' (distance = 0 if and only if covariates are the same),
+'Hamming' (Hamming distance).
 
-User can also supply their own distance function by setting method = 'other' and
+Users can also supply their own distance function by setting method = 'other' and
 using the argument ``dist_func''. ``dist_func'' is a user-supplied distance
 function in the following format:
 dist_func(controls, treated), where treated is a length-p vector
@@ -68,12 +69,15 @@ of covaraites and controls is a n_c-by-p matrix of covariates.
 The output of function dist_func is a length-n_c vector of distance
 between each control and the treated.
 
-There are two options for users to make a network sparse. First, caliper
+There are two options for users to make a network sparse. Option caliper
 is a value applied to the vector p to avoid connecting treated to controls
-whose covariate/propensity score defined by p is outside p +/- caliper.
-Second, within a specified caliper, sometimes there are too many controls
-connected to the treated, and we can further trim down this number up to k
-with resctricting attention to the k nearest (in p) to each treated.
+whose covariate or propensity score defined by p is outside p +/- caliper.
+Second, within a specified caliper, sometimes there are still too many controls
+connected to each treated, and we can further trim down this number up to k
+by restricting our attention to the k nearest (in p) to each treated.
+
+By default a hard caliper is applied, i.e., option penalty is set to Inf by default.
+Users may make the caliper a soft one by setting penalty to a large yet finite number.
 }
 \examples{
 # We first prepare the input X, Z, propensity score

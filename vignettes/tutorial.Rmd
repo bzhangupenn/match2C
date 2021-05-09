@@ -11,14 +11,15 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  fig.width=6.5, 
-  fig.height=4.3, 
+  fig.width=7.5, 
+  fig.height=5, 
   comment = "#>"
 )
 ```
 
 ```{r setup}
-options(digits=4)
+options(scipen = 99)
+options(digits = 3)
 library(match2C)
 library(ggplot2)
 ```
@@ -26,7 +27,7 @@ library(ggplot2)
 # Introduction
 
 ## Preparation of data
-This file serves as an introduction to the **R** package **match2C**. We first load the package and an illustrative dataset from Rouse (1995). For the purpose of illustration, we will mostly work with 6 covariates: two nominal (black and female), two ordinal (father's education and mother's education), and two continuous (family income and test score). Treatment is an instrumental-variable-defined exposure, equal to $1$ if the subject is doubly encouraged, meaning the both the excess travel time and excess four-year college tuition are larger than the median, and to be $0$ if the subject is doubly discouraged. There are $1122$ subjects that are doubly encouraged (treated), and $1915$ that are doubly discouraged (control). 
+This file serves as an introduction to the **R** package **match2C**. We first load the package and an illustrative dataset from Rouse (1995). For the purpose of illustration, we will mostly work with 6 covariates: two nominal (black and female), two ordinal (father's education and mother's education), and two continuous (family income and test score). Treatment is an instrumental-variable-defined exposure, equal to $1$ if the subject is doubly encouraged, meaning the both the excess travel time and excess four-year college tuition are larger than the median, and to be $0$ if the subject is doubly discouraged. There are $1,122$ subjects that are doubly encouraged (treated), and $1,915$ that are doubly discouraged (control). 
 
 Below, we specify covariates to be matched (X) and the exposure (Z), and fit a propensity score model. 
 
@@ -52,6 +53,11 @@ We define some useful statistical matching terminologies:
 
 * **Bipartite Matching**: Matching control subjects to treated subjects based on a binary treatment status. 
 
+* **Tripartite Matching**: Matching control subjects to treated subjects based on a tripartite network. A tripartite 
+network consists of two bipartite networks: a left network and a right network, where the right network is a mirror
+copy of the left network in nodes, but with possibly different distance structure. Typically the left network is responsible
+for close pairing and the right network is responsible for balancing; See Zhang et al., 2021 for details.
+
 * **Pair Matching**: Matching one control subject to one treated subject.
 
 * **Optimal Matching**: Matching control subjects to treated subjects such that some properly defined sum of
@@ -71,16 +77,15 @@ For more details on statistical matching and statistical inference procedures af
 # Statistical Matching Workflow: Match, Check Blance, and (Possibly) Iterate
 
 ## An Overview of the Family of Three Matching Functions *match_2C*, *match_2C_mat*, and *match_2C_list*
-In the pacakge **match2C**, three functions are primarily responsible for the main task statistical matching. These three functions
-are *match_2C*, *match_2C_mat*, and *match_2C_list*. We will more closely examine their differences in later sections and illustrate 
-their usage with numerous examples. In this section we give a high-level outline of what each of them does and how they are different 
-from each other. In short, the three functions have the same output format (details in the next section), but they are primarily 
-different in their inputs. 
+In the package **match2C**, three functions are primarily responsible for the main task statistical matching. These three functions
+are *match_2C*, *match_2C_mat*, and *match_2C_list*. We will examine more closely their differences and illustrate their usage 
+with numerous examples in later sections. In this section we give a high-level outline of what each of them does. In short, the 
+three functions have the same output format (details in the next section), but are different in their inputs. 
 
 Function *match_2C_mat* takes as input at least one distance matrix. A distance matrix is a n_t-by-b_c matrix
 whose ij-th entry encodes a measure of distance (or similarity) between the i-th treated and the j-th control subject. 
-Hence, function *match_2C_mat* is most handy to use for users who are most familiar with constructing distance matrices 
-and working with distance matrices. One commonly-used way to construct a distance matrix is to use the function *match_on*
+Hence, function *match_2C_mat* is most handy for users who are familiar with constructing and working with 
+distance matrices. One commonly-used way to construct a distance matrix is to use the function *match_on*
 in the package **optmatch** (Hansen, 2007).
 
 Function *match_2C_list* is similar to *match_2C_mat* except that it requires at least one distance list as input. 
@@ -90,15 +95,16 @@ A list representation of a treatment-by-control distance matrix consists of the 
 * *end_n*: a vector containing the node numbers of the end nodes of each arc in the network.
 * *d*: a vector containing the integer cost of each arc in the network.
 
-Node 1,2,...,n_t correspond to *n_t* treatment nodes; n_t + 1, n_t + 2, ..., n_t + n_c correspond to *n_c* control nodes. 
-Note that *start_n*, *end_n*, and *d* have the same lengths, all of which equal to the number of edges. Function *create_list_from_scratch*
-and *create_list_from_mat* allow users to construct a (possibly sparse) distance list with a possibly user-specified distance measure.
-We will discuss how to construct distance lists in later sections.
+Nodes 1,2,...,n_t correspond to *n_t* treatment nodes, and n_t + 1, n_t + 2, ..., n_t + n_c correspond to *n_c* control nodes. 
+Note that *start_n*, *end_n*, and *d* have the same lengths, all of which equal to the number of edges. Functions *create_list_from_scratch*
+and *create_list_from_mat* in the package allow users to construct a (possibly sparse) distance list with a possibly 
+user-specified distance measure. We will discuss how to construct distance lists in later sections.
 
-Function *match_2C* is a wrap-up of *match_2C_list* with pre-specified distance structures. On the left, a Mahalanobis distance is adopted;
-on the right, an L-1 distance between 10 propensity score bins is used. A large penalty is applied so that the algorithm prioritizes balancing
-the propensity score distributions in the treated and matched control groups, followed by minimizing the sum of within-matched-pair 
-Mahalanobis distances. Function *match_2C* further allows fine-balancing the joint distribution of a few key covariates. The hierarchy goes in
+Function *match_2C* is a wrap-up of *match_2C_list* with pre-specified distance list structures. For the left network, 
+a Mahalanobis distance between covariates X is adopted; For the right network, an L-1 distance between the propensity score is used. 
+A large penalty is applied so that the algorithm prioritizes balancing the propensity score distributions in the treated and 
+matched control groups, followed by minimizing the sum of within-matched-pair Mahalanobis distances. Function *match_2C* further 
+allows fine-balancing the joint distribution of a few key covariates. The hierarchy goes in
 the order of fine-balance >> propensity score distribution >> within-pair Mahalanobis distance.
 
 
@@ -108,7 +114,7 @@ a list of the following three elements:
 
 * *feasible*: 0/1 depending on the feasibility of the matching problem; 
 
-* *data_with_matched_set_ind*: a data frame that is the same as the original data frame, except that a column called *matched_set* and a column called *distance* are added to it. Variable *matched_set* assigns 1,2,...,n_t to each matched set, and NA to controls not matched to any treated. Variable *distance* records the cotnrol-to-treated distance in each matched pair, and assigns NA to all treated and controls that are left unmatched. If matching is not feasible, NULL will be returned;
+* *data_with_matched_set_ind*: a data frame that is the same as the original data frame, except that a column called *matched_set* and a column called *distance* are added to it. Variable *matched_set* assigns 1,2,...,n_t to each matched set, and NA to controls not matched to any treated. Variable *distance* records the control-to-treated distance in each matched pair, and assigns NA to all treated and controls that are left unmatched. If matching is not feasible, NULL will be returned;
 
 * *matched_data_in_order*: a data frame organized in the order of matched sets and otherwise the same as *data_with_matched_set_ind*. Null will be returned if the matching is unfeasible.
 
@@ -174,10 +180,9 @@ There are six columns of the balance table:
 
 ```{r intro example check balance table, echo=TRUE}
 tb_example = check_balance(Z, matching_output_example, 
-              cov_list = c('female', 'black', 'bytest', 'fincome', 
-                           'dadeduc', 'momeduc', 'propensity'),
+              cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
               plot_propens = FALSE)
-print(tb_example, digits = 4)
+print(tb_example)
 ```
 
 Function *check_balance* may also plot the distribution of the propensity score among the treated subjects, all conrol 
@@ -219,17 +224,41 @@ in the treated and matched control group almost perfectly align with each other.
 
 ```{r match2C no caliper, echo=TRUE}
 # Perform a matching with minimal input
-matching_output = match_2C(Z = Z, X = X, 
+matching_output = match_2C(Z = Z, X = X, method = 'robust maha',
                            propensity = propensity, 
                            dataset = dt_Rouse)
 tb = check_balance(Z, matching_output, 
-                   cov_list = c('female', 'black', 'bytest', 'fincome', 
-                                'dadeduc', 'momeduc', 'propensity'),
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                    plot_propens = TRUE, propens = propensity)
-print(tb, digits = 4)
+print(tb)
 ```
 
-## Further Incorporating Fine Balancing Constraints
+
+## Incorporating Exact Matching Constraints
+
+Researchers can also incorporate the exact matching constraints by specifying the variables to be exactly matched in the option exact. In the example below, we match exactly on father’s education and mother’s education. The matching algorithm still tries to find a match that maximally balance the propensity score distribution, and then minimzies the treated-to-control total distances, subject to the exact matching constraints.
+
+One can check that father’s education and mother’s education are exactly matched. Moreover, since the matching algorithm separates balancing the propensity score from exact matching, the propensity score distributions are still well balanced.
+
+```{r match2c exact}
+# Perform a matching with minimal input
+matching_output_with_exact = match_2C(Z = Z, X = X, exact = c('dadeduc', 'momeduc'),
+                           propensity = propensity, 
+                           dataset = dt_Rouse)
+
+# Check exact matching
+head(matching_output_with_exact$matched_data_in_order[, c('female', 'black', 'bytest', 
+                                      'fincome', 'dadeduc', 'momeduc', 
+                                      'propensity', 'IV', 'matched_set')])
+
+# Check overall balance
+tb = check_balance(Z, matching_output_with_exact, 
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+                   plot_propens = TRUE, propens = propensity)
+
+```
+
+## Incorporating Fine Balancing Constraints
 
 Function *match_2C* also allows incorporating the (near-)fine balancing constraints. (Near-)fine balance refers to maximally balancing the marginal
 distribution of a nominal variable, or more generally the joint distribution of a few nominal variables, in the treated and matched control groups. 
@@ -253,10 +282,9 @@ We examine the balance and the variable *dadeduc* is indeed finely balanced.
 ```{r match2C fine balance check, echo=TRUE}
 # Perform a matching with fine balance
 tb2 = check_balance(Z, matching_output2, 
-                   cov_list = c('female', 'black', 'bytest', 'fincome', 
-                                'dadeduc', 'momeduc', 'propensity'),
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                    plot_propens = TRUE, propens = propensity)
-print(tb2, digits = 4)
+print(tb2)
 ```
 One can further finely balance the joint distribution of multiple nominal variables. The code chunk below finely balances the joint distribution
 of father's (4 levels) and mother's (4 levels) education ($4 \times 4 = 16$ levels in total).
@@ -268,10 +296,9 @@ matching_output3 = match_2C(Z = Z, X = X,
                             dataset = dt_Rouse,
                             fb_var = c('dadeduc', 'momeduc'))
 tb3 = check_balance(Z, matching_output2, 
-                   cov_list = c('female', 'black', 'bytest', 'fincome', 
-                                'dadeduc', 'momeduc', 'propensity'),
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                    plot_propens = FALSE)
-print(tb3, digits = 4)
+print(tb3)
 ```
 
 
@@ -334,6 +361,33 @@ matching_output_unfeas = match_2C(Z = Z, X = X, propensity = propensity,
                                   caliper_left = 0.001)
 ```
 
+## Force including certain controls into the matched cohort
+
+Sometimes, researchers might want to include certain controls in the final matched cohort. Option *include* in the function *match_2C* serves this purpose. The option *include* is a binary vectors (0's and 1's) whose length equal to the total 
+number of controls, with 1 in the i-th entry if the i-th control has to be included and 0 otherwise. For instance, the match
+below forces including the first 100 controls in our matched samples.
+
+```{r match2C force control, echo=TRUE}
+
+# Create a binary vector with 1's in the first 100 entries and 0 otherwise
+# length(include_vec) = n_c
+
+include_vec = c(rep(1, 100), rep(0, n_c - 100))
+# Perform a matching with minimal input
+matching_output_force_include = match_2C(Z = Z, X = X, 
+                           propensity = propensity, 
+                           dataset = dt_Rouse, 
+                           include = include_vec)
+```
+
+One can check that the first 100 controls in the original dataset are forced into the final matched samples.
+
+```{r match2C force control 2, echo=TRUE}
+
+matched_data = matching_output_force_include$data_with_matched_set_ind
+matched_data_control = matched_data[matched_data$IV == 0,]
+head(matched_data_control) # Check the matched_set column
+```
 
 # Function *match_2C_mat*: Matching with Two User-Supplied Distance Matrices
 
@@ -392,11 +446,10 @@ matching_output_mat = match_2C_mat(Z, dt_Rouse, dist_mat_1, dist_mat_2,
 
 # Examine the balance after matching
 tb_mat = check_balance(Z, matching_output_mat, 
-                   cov_list = c('female', 'black', 'bytest', 'fincome', 
-                                'dadeduc', 'momeduc', 'propensity'),
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                    plot_propens = FALSE)
 
-print(tb_mat, digits = 4)
+print(tb_mat)
 ```
 
 In the second example, we further incorporate a propensity score caliper in the left network. The code chunk below implements a propensity score caliper
@@ -639,7 +692,7 @@ matching_output_ex2 = match_2C_list(Z, dt_Rouse,
 ```
 
 
-# Example III: Exact Matching on One (or More) Variable while Balancing Others
+### Example III: Exact Matching on One (or More) Variable while Balancing Others
 
 Suppose we would like to construct an optimal pair matching and insist two subjects in the same matched pair match exactly on father's and mother's education. We compare two implementations below. Our first implementation is a conventional one based on a bipartite graph:
 
@@ -678,20 +731,136 @@ the second implementation achieves better overall balance.
 
 ```{r dist list ex3 check balance, echo=TRUE}
 tb_ex3_1 = check_balance(Z, matching_output_ex3_1, 
-                        cov_list = c('female', 'black', 'bytest', 'fincome', 
-                                     'dadeduc', 'momeduc', 'propensity'),
+                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                         plot_propens = TRUE, propens = propensity)
 
-print(tb_ex3_1, digits = 4)
+print(tb_ex3_1)
 
 tb_ex3_2 = check_balance(Z, matching_output_ex3_2, 
-                        cov_list = c('female', 'black', 'bytest', 'fincome', 
-                                     'dadeduc', 'momeduc', 'propensity'),
+                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                         plot_propens = TRUE, propens = propensity)
-print(tb_ex3_2, digits = 4)
+print(tb_ex3_2)
 
 ```
 
+
+### Example IV: Optimal matching with fine balance or near-fine balance
+
+We illustrate how to perform an optimal matching with fine balance and exact matching. Exact macthing is a constraint on who is matched to whom and hence implemented using the left network. We build a Mahalanobis-distance-based distance list subject to a propensity score caliper and exact matching constraints on female and black; see dist_list_1.
+
+On the other hand, fine balance is concerned about the marginal distribution, not who gets to matched to whom, and hence is implemented using the right network. On the right, we build a distance list that uses a 0/1 distance on variables father’s education and mother’s education, so that the joint distribution of father’s education and mother’s education are to be finely balanced; see dist_list_2.
+
+One can check the resulting match has exactly matched on female and black, and finely balanced father’s and mother’s education.
+
+
+```{r dist list ex4, echo=TRUE}
+dist_list_1 = create_list_from_scratch(Z = Z, X = X, 
+                                       exact = c('female', 'black'),
+                                       p = propensity,
+                                       caliper_low = 0.15,
+                                       method = 'maha')
+
+dist_list_2 = create_list_from_scratch(Z = Z, X = X[, c('dadeduc', 'momeduc')],
+                                                  method = '0/1')
+matching_output_ex4 = match_2C_list(Z, dt_Rouse, dist_list_1, dist_list_2, lambda = 1000)
+
+tb_ex4 = check_balance(Z, matching_output_ex4, 
+                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+                        plot_propens = TRUE, propens = propensity)
+print(tb_ex4)
+
+```
+
+### Example V: Force certain controls in the final matched cohort
+
+To force certain controls in the matched cohort, researchers may further apply the function *force_control* to the
+constructed distance lists. Below, we update the *dist_list_1* and *dist_list_2* from Example IV, and force the first
+50 controls in the final matched cohorts, while still retain exact matching on female and black, and near-fine balance
+on father's education and mother's education.
+
+```{r dist list ex5, echo=TRUE}
+
+# The first 50 controls must be included
+include_vec = c(rep(1, 50), rep(0, n_c - 50))
+
+# dist_list_1 and dist_list_2 are from example 4 above
+dist_list_1_update = force_control(dist_list_1, Z = Z, include = include_vec)
+dist_list_2_update = force_control(dist_list_2, Z = Z, include = include_vec)
+
+matching_output_ex5 = match_2C_list(Z, dt_Rouse, 
+                                    dist_list_1_update, 
+                                    dist_list_2_update, lambda = 1000)
+
+tb_ex5 = check_balance(Z, matching_output_ex5, 
+                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+                        plot_propens = TRUE, propens = propensity)
+print(tb_ex5)
+```
+
+
+
+### Example VI: Recover the *match_2C* default match using *match_2C_list*
+
+As the last example, we show how to construct the default matching in the *match_2C* main function by constructing
+appropriate distance lists for the left and right networks. 
+
+We construct the left network using Mahalanobis distance subject to the propensity score caliper and the exact
+matching constraints. This is *dist_list_left*.
+
+The right network has two parts. We first consturct a distance list based on the L1 distance of the propensity 
+score. This distance list serves to balance the marginal distribution of the propensity score. This is
+*dist_list_right_pscore*. We then construct a distance list based on 0/1 distance on the variables to be finely
+balanced; see Example IV. This is *dist_list_right_fb*. We then combined these two distance lists and call it *dist_list_right*, 
+and we use a penalty 100 to prioritize the fine balance constraint over balancing the propensity score. 
+
+Optionally, one can use *force_control* function to force including certain controls; see Example V.
+
+Lastly, we use function *match_2C_list* to solve the resulting optimization problem, where we use a penalty 
+lambda = 100 to priority the right network over the left.
+
+One can check that the match below exactly matches on black, finely balances father's education, maximally
+balances the propensity score distributions in two groups, and uses the first 50 controls.
+
+```{r dist list ex6, echo=TRUE}
+# Construct distance list on the left: Maha subject to pscore caliper
+dist_list_left = create_list_from_scratch(Z = Z, X = X,
+                                            exact = c('black'),
+                                            p = propensity,
+                                            caliper_low = 0.2,
+                                            method = 'maha')
+
+# Construct distance list on the right: L1 distance on the pscore plus fine balance
+dist_list_right_pscore = create_list_from_scratch(Z = Z, X = propensity,
+                                             p = propensity,
+                                             caliper_low = 1,
+                                             method = 'L1')
+
+dist_list_right_fb = create_list_from_scratch(Z = Z, X = X[, c('dadeduc')],
+                                                  p = propensity,
+                                                  caliper_low = 1,
+                                                  method = '0/1')
+
+dist_list_right = dist_list_right_pscore
+dist_list_right$d = dist_list_right$d + 100*dist_list_right_fb$d 
+
+
+# The first 50 controls must be included
+include_vec = c(rep(1, 50), rep(0, n_c - 50))
+
+# dist_list_1 and dist_list_2 are from example 4 above
+dist_list_left_update = force_control(dist_list_left, Z = Z, include = include_vec)
+dist_list_right_update = force_control(dist_list_right, Z = Z, include = include_vec)
+
+matching_output_ex6 = match_2C_list(Z = Z, dataset = dt_Rouse,
+                                  dist_list_1 = dist_list_left_update,
+                                  dist_list_2 = dist_list_right_update,
+                                  lambda = 100)
+
+tb_ex6 = check_balance(Z, matching_output_ex6, 
+                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+                        plot_propens = TRUE, propens = propensity)
+print(tb_ex6)
+```
 
 
 

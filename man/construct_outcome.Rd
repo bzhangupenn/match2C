@@ -19,16 +19,16 @@ construct_outcome(res, dist_list_1, Z, dataset, controls = 1)
 }
 \value{
 This function returns a list of three objects: 1) feasible: 0/1 depending on the
-feasibility of the matching problem; 2) data_with_matched_set_ind: a dataframe that is the
-same as the original dataframe, except that a column called ``matched_set'' and a column
-called ``distance'' are added to it. ``matched_set'' column assigns 1,2,...,n_t to each matched
+feasibility of the matching problem; 2) data_with_matched_set_ind: a data frame that is the
+same as the original data frame, except that a column called ``matched_set'' and a column
+called ``distance'' are appended to it. ``matched_set'' column assigns 1,2,...,n_t to each matched
 set, and NA to those not matched to any treated. Variable ``distance'' records the distance
 (as specified in the left network) between each matched control and the treated, and assigns NA
-to all treated and cotnrols that are left unmatched. If matching is not feasible, NULL will be returned;
+to all treated and controls that are left unmatched. If matching is not feasible, NULL will be returned;
 3) matched_data_in_order:a dataframe organized in the order of matched sets and otherwise the
 same as data_with_matched_set_ind. Note that the matched_set column assigns 1,2,...,n_t for
-as indices for matched sets, and NA for those controls that are not paired. Null will be returned
-if the matching is infeasible.
+as indices for matched sets, and NA for those controls that are not paired. Null will
+be returned if the matching is unfeasible.
 }
 \description{
 This function constructs the output given the relaxsolution

@@ -9,13 +9,15 @@ match_2C(
   X,
   propensity,
   dataset,
+  method = "maha",
   exact = NULL,
   caliper_left = 1,
   caliper_right = 1,
   k_left = NULL,
   k_right = NULL,
   fb_var = NULL,
-  controls = 1
+  controls = 1,
+  include = NULL
 )
 }
 \arguments{
@@ -26,6 +28,8 @@ match_2C(
 \item{propensity}{A vector of estimated propensity score (length(propensity) = length(Z)).}
 
 \item{dataset}{Dataset to be matched.}
+
+\item{method}{Method used to compute treated-control distance on the left. The default is the Mahalanobis distance.}
 
 \item{exact}{A vector of strings indicating which variables need to be exactly matched.}
 
@@ -40,17 +44,19 @@ match_2C(
 \item{fb_var}{A vector giving names of variables in matrix X to be finely balanced.}
 
 \item{controls}{Number of controls matched to each treated. Default is 1.}
+
+\item{include}{A binary vector indicating which controls must be included (length(include) = sum(1-Z)).}
 }
 \value{
 This function returns a list of three objects including the feasibility
 of the matching problem and the matched controls organized in different formats.
-See the documentation of the function construct_outcome or the tutorial for more
+See the documentation of the function construct_outcome or the vignette for more
 details.
 }
 \description{
-This function perform an optimal statistical matching that sequentially balances the nominal levels
+This function performs an optimal statistical matching that sequentially balances the nominal levels
 (near-fine balance), the marginal distribution of the propensity score, and the total
-within-matched-pair Mahalanibis distance.
+within-matched-pair Mahalanobis distance.
 }
 \examples{
 
@@ -70,6 +76,6 @@ k_left = 100, k_right = 100,
 dataset = dt_Rouse)
 
 
-# Please refer to the vignette for more examples.
+# Please refer to the vignette for many more examples.
 
 }

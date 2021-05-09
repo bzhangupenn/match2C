@@ -23,9 +23,12 @@ needs to be supplied.}
 \value{
 This function returns a data frame of the overall balance after statistical
 matching. We tabulate the mean of each covariate in the cov_list in the treated group
-and control groups after matching, and calculate their standardized differences, which
-is defined as the mean difference divided by the pooled standard error before matching.
+and control groups after matching, and calculate their standardized differences.
+Standardized difference is defined as the mean difference divided by the pooled
+standard error before matching.
 }
 \description{
-This function checks the overall balance after statistical matching.
+This function checks the overall balance after statistical matching and plots
+the distribution of the propensity score in the treated group, the control group,
+and the matched control group.
 }

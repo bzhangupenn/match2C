@@ -1,4 +1,4 @@
-#'Perform a pair matching using two user-specified list representations of
+#'Perform a pair (or 1:k) matching with two user-specified list representations of
 #'distance matrices.
 #'
 #'This function performs a pair-matching using (at most) two user-specified distance
@@ -9,7 +9,7 @@
 #'This function is designed for more experienced and sophisticated R users.
 #'Instead of providing possibly dense treatment-by-control distance matrices
 #'that take up a lot of memories, users may simply provide two lists that specifies
-#'informations of edges: their starting points, ending points, capacity, and cost.
+#'information of edges: their starting points, ending points, capacity, and cost.
 #'For more information on list representations of a distance matrix, see the
 #'documentation of the function ``create_list_from_mat'' and ``create_list_from_scratch''.
 #'Note that by setting dist_list_2 = NULL, the usual matching framework is restored.

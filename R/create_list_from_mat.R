@@ -1,6 +1,6 @@
 #'Create a list representation of a distance matrix.
 #'
-#'This function creates a ``list representations''
+#'This function creates a ``list representation''
 #'of a treatment-by-control distance matrix.
 #'
 #'This function creates a list representation of a treatment-by-control
@@ -19,12 +19,15 @@
 #'are n_c control nodes. start_n, end_n, and d should have the same lengths,
 #'all of which equal to the number of edges.
 #'
-#'There are two options for users to make a network sparse. First, caliper
+#'There are two options for users to make a network sparse. Option caliper
 #'is a value applied to the vector p to avoid connecting treated to controls
-#'whose covariate/propensity score defined by p is outside p +/- caliper.
-#'Second, within a specified caliper, sometimes there are too many controls
-#'connected to the treated, and we can further trim down this number up to k
-#'with resctricting attention to the k nearest (in p) to each treated.
+#'whose covariate or propensity score defined by p is outside p +/- caliper.
+#'Second, within a specified caliper, sometimes there are still too many controls
+#'connected to each treated, and we can further trim down this number up to k
+#'by restricting our attention to the k nearest (in p) to each treated.
+#'
+#'By default a hard caliper is applied, i.e., option penalty is set to Inf by default.
+#'Users may make the caliper a soft one by setting penalty to a large yet finite number.
 #'
 #'@param Z A length (n = n_t + n_c) vector of treatment indicators.
 #'@param dist_mat A treatment-by-control (n_t-by-n_c) distance matrix.
