@@ -40,11 +40,12 @@ treated_control_net <- function(n_t, n_c, dist_list, controls = 1){
   end_n = c(seq(2, n_t + 1, 1), end_n + 1, rep(n_t + n_c + 2, n_c))
   d = c(rep(0, n_t), d, rep(0, n_c))
   num_edge = length(d)
-  cap = c(rep(controls, n_t), rep(1, num_edge - 2*n_t), rep(controls, n_t))
+  cap = c(rep(controls, n_t), rep(1, num_edge - 2*n_t), rep(1, n_t))
 
   net = list(startn = start_n,
              endn = end_n,
              ucap = cap,
              cost = d,
              b =  c(controls*n_t, rep(0, n_t), rep(0, n_c), - controls*n_t))
+
 }

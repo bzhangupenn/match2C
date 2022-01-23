@@ -5,6 +5,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // revert_dist_list_cpp
 List revert_dist_list_cpp(int n_t, int n_c, std::vector<int> startn, std::vector<int> endn, std::vector<double> d);
 RcppExport SEXP _match2C_revert_dist_list_cpp(SEXP n_tSEXP, SEXP n_cSEXP, SEXP startnSEXP, SEXP endnSEXP, SEXP dSEXP) {

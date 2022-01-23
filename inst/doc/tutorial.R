@@ -11,6 +11,7 @@ options(scipen = 99)
 options(digits = 3)
 library(match2C)
 library(ggplot2)
+library(mvtnorm)
 
 ## ---- echo=TRUE, warning=FALSE, message=FALSE---------------------------------
 attach(dt_Rouse)
@@ -417,4 +418,70 @@ tb_ex6 = check_balance(Z, matching_output_ex6,
                         cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
                         plot_propens = TRUE, propens = propensity)
 print(tb_ex6)
+
+## ----template match generate data, echo = TRUE--------------------------------
+set.seed(123)
+ratio = 3 # Control-to-treated ratio
+n_t = 500 # 500 treated units
+n_c = n_t * ratio # 1500 control units
+p = 10 # Number of covariates
+
+# Generate covariates for the treated and control units
+X_treated = rmvnorm(n_t, mean = c(1, rep(0, p - 1)), sigma = diag(p))
+X_control = rmvnorm(n_c, mean = rep(0.5, p), sigma = diag(p))
+
+X = rbind(X_treated, X_control) # 2000-by-10 matrix of covariates
+colnames(X) = c('V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10')
+Z = c(rep(1, n_t), rep(0, n_c)) # Length-2000 vector of treatment status
+dataset = data.frame(X, Z) # The original dataset
+
+head(X)
+
+## ----template match generate template, echo = TRUE----------------------------
+n_template = 100
+beta = 0.4
+d = 5
+template = as.data.frame(rmvnorm(n_template, mean = c(beta, rep(0,d-1))))
+head(template)
+
+## ----template basic 1, echo = TRUE--------------------------------------------
+template_match_res = template_match(template = template, X = X, Z = Z, 
+                                     dataset = dataset, multiple = 1, lambda = 0,
+                                     caliper_pscore = 0.1, penalty_pscore = Inf)
+
+check_balance_template(dataset = dataset,
+                       template = template, 
+                      template_match_object = template_match_res, 
+                      cov_list = c('V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10'))
+
+## ----template basic 1 300, echo = TRUE----------------------------------------
+template_match_res1 = template_match(template = template, X = X, Z = Z, 
+                                     dataset = dataset, multiple = 3, lambda = 0,
+                                     caliper_pscore = 0.1, penalty_pscore = Inf)
+
+check_balance_template(dataset = dataset,
+                       template = template, 
+                      template_match_object = template_match_res1, 
+                      cov_list = c('V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10'))
+
+## ----template basic 2, echo = TRUE--------------------------------------------
+template_match_res2 = template_match(template = template, X = X, Z = Z, 
+                                     dataset = dataset, multiple = 1, lambda = 1000,
+                                     caliper_pscore = 0.2, penalty_pscore = Inf)
+
+check_balance_template(dataset = dataset,
+                       template = template, 
+                      template_match_object = template_match_res2, 
+                      cov_list = c('V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10'))
+
+## ----template basic 3, echo = TRUE--------------------------------------------
+template_match_res3 = template_match(template = template, X = X, Z = Z, 
+                                     dataset = dataset, multiple = 1, lambda = 100,
+                                     caliper_gscore = 0.02, penalty_gscore = 100)
+
+
+check_balance_template(dataset = dataset,
+                       template = template, 
+                      template_match_object = template_match_res3, 
+                      cov_list = c('V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10'))
 
