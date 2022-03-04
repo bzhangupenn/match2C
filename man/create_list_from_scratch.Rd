@@ -80,6 +80,7 @@ By default a hard caliper is applied, i.e., option penalty is set to Inf by defa
 Users may make the caliper a soft one by setting penalty to a large yet finite number.
 }
 \examples{
+\dontrun{
 # We first prepare the input X, Z, propensity score
 
 attach(dt_Rouse)
@@ -100,5 +101,5 @@ dist_list_pscore_maha = create_list_from_scratch(Z, X, p = propensity,
 
 # More examples, including how to use a user-supplied
 # distance function, can be found in the vignette.
-
+}
 }

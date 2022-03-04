@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 options(scipen = 99)
-options(digits = 3)
+options(digits = 2)
 library(match2C)
 library(ggplot2)
 library(mvtnorm)
@@ -27,7 +27,10 @@ library(mvtnorm)
 
 # Introduction
 
-## Data preparation
+To run all functionalities in this tutorial, one needs to first install the package optmatch and agree to its
+terms of use. Package optmatch may be downloaded from <https://github.com/markmfredrickson/optmatch> if not available on CRAN.
+
+## Preparation of data
 This file serves as an introduction to the **R** package **match2C**. We first load the package and an illustrative dataset from Rouse (1995). For the purpose of illustration, we will mostly work with 6 covariates: two nominal (black and female), two ordinal (father's education and mother's education), and two continuous (family income and test score). Treatment is an instrumental-variable-defined exposure, equal to $1$ if the subject is doubly encouraged, meaning the both the excess travel time and excess four-year college tuition are larger than the median, and to be $0$ if the subject is doubly discouraged. There are $1,122$ subjects that are doubly encouraged (treated), and $1,915$ that are doubly discouraged (control). 
 
 Below, we specify covariates to be matched (X) and the exposure (Z), and fit a propensity score model. 
@@ -57,7 +60,7 @@ We define some useful statistical matching terminologies:
 * **Tripartite Matching**: Matching control subjects to treated subjects based on a tripartite network. A tripartite 
 network consists of two bipartite networks: a left network and a right network, where the right network is a mirror
 copy of the left network in nodes, but with possibly different distance structure. Typically the left network is responsible
-for close pairing and the right network is responsible for balancing; See *Zhang et al. Matching One Sample According to Two Criteria in Observational Studies. Journal of the American Statistical Association (in press)* for details.
+for close pairing and the right network is responsible for balancing; See Zhang et al., 2021 for details.
 
 * **Pair Matching**: Matching one control subject to one treated subject.
 
@@ -119,6 +122,10 @@ a list of the following three elements:
 
 * *matched_data_in_order*: a data frame organized in the order of matched sets and otherwise the same as *data_with_matched_set_ind*. Null will be returned if the matching is unfeasible.
 
+```{r, include=FALSE}
+if (!requireNamespace("optmatch", quietly = TRUE)) knitr::opts_chunk$set(eval = FALSE)
+```
+
 ```{r intro example, echo=FALSE}
 dist_list_pscore = create_list_from_scratch(Z, X, exact = NULL, p = propensity, 
                                        caliper_low = 0.008, 
@@ -145,12 +152,17 @@ Let's take a look at the data frame *data_with_matched_set_ind*. Note that it is
 head(matching_output_example$data_with_matched_set_ind, 6)
 ```
 
+
 Finally, *matched_data_in_order* is *data_with_matched_set_ind* organized in the order of matched sets. Note that the first $2$ subjects belong to the same matched set; the next two subjects belong to the second matched set, and etc. 
 ```{r intro example data2, echo=TRUE}
 # Check dataframe organized in matched set indices
 head(matching_output_example$matched_data_in_order, 6)
 ```
 
+
+```{r, include=FALSE, eval=TRUE}
+knitr::opts_chunk$set(eval = TRUE)
+```
 
 ## Checking Balance
 Statistical matching belongs to the design stage of an observational study. The ultimate goal of statistical matching
@@ -179,6 +191,11 @@ There are six columns of the balance table:
 
 1. Standardized differences *after* matching.
 
+```{r, include=FALSE}
+if (!requireNamespace("optmatch", quietly = TRUE)) knitr::opts_chunk$set(eval = FALSE)
+```
+
+
 ```{r intro example check balance table, echo=TRUE}
 tb_example = check_balance(Z, matching_output_example, 
               cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
@@ -186,17 +203,32 @@ tb_example = check_balance(Z, matching_output_example,
 print(tb_example)
 ```
 
+
+```{r, include=FALSE, eval=TRUE}
+knitr::opts_chunk$set(eval = TRUE)
+```
+
+
 Function *check_balance* may also plot the distribution of the propensity score among the treated subjects, all conrol 
 subjects, and the matched control subjects by setting option *plot_propens = TRUE* and supplying the option *propens* with
 estimated propensity scores as shown below. In the figure below, the blue curve corresponds to the propensity score distribution
 among 1,122 treated subjects, the red curve among 1,915 control subjects, and the green curve among 1,122 matched controls.
 It is evident that after matching, the propensity score distribution aligns better with that of the treated subjects.
 
+```{r, include=FALSE}
+if (!requireNamespace("optmatch", quietly = TRUE)) knitr::opts_chunk$set(eval = FALSE)
+```
+
 ```{r intro example check balance plot, echo=TRUE}
 tb_example = check_balance(Z, matching_output_example, 
               cov_list = c('female', 'black', 'bytest', 'fincome', 
                            'dadeduc', 'momeduc', 'propensity'),
               plot_propens = TRUE, propens = propensity)
+```
+
+
+```{r, include=FALSE, eval=TRUE}
+knitr::opts_chunk$set(eval = TRUE)
 ```
 
 # Introducing the Main Function *match_2C*
@@ -223,9 +255,15 @@ The code chunk below displays how to perform a basic match using function *match
 and then check the balance of such a match. The balance is very good and the propensity score distributions 
 in the treated and matched control group almost perfectly align with each other.
 
+
+```{r, include=FALSE}
+if (!requireNamespace("optmatch", quietly = TRUE)) knitr::opts_chunk$set(eval = FALSE)
+```
+
+
 ```{r match2C no caliper, echo=TRUE}
 # Perform a matching with minimal input
-matching_output = match_2C(Z = Z, X = X, method = 'robust maha',
+matching_output = match_2C(Z = Z, X = X, 
                            propensity = propensity, 
                            dataset = dt_Rouse)
 tb = check_balance(Z, matching_output, 
@@ -390,82 +428,9 @@ matched_data_control = matched_data[matched_data$IV == 0,]
 head(matched_data_control) # Check the matched_set column
 ```
 
-# Function *match_2C_mat*: Matching with Two User-Supplied Distance Matrices
-
-## An Overview
-
-We illustrate how to use the function *match_2C_mat* in this section. The function *match_2C_mat* takes the following inputs:
-
-* Z: A length-n vector of treatment indicator.
-
-* X: A n-by-p matrix of covariates.
-
-* dataset: The original dataset.
-
-* dist_mat_1: A user-specified treatment-by-control (n_t-by-n_c) distance matrix.
-
-* dist_mat_2: A second user-specified treatment-by-control (n_t-by-n_c) distance matrix.
-
-* lambda: A penalty that does a trade-off between two parts of the network.
-
-* controls: Number of controls matched to each treated. Default is 1.
-
-* p_1: A length-n vector on which caliper_1 applies, e.g. a vector of propensity score.
-
-* caliper_1: Size of caliper_1.
-
-* k_1: Maximum number of controls each treated is connected to in the first network.
-
-* p_2: A length-n vector on which caliper_2 applies, e.g. a vector of propensity score.
-
-* caliper_2: Size of caliper_2.
-
-* k_2: Maximum number of controls each treated is connected to in the second network.
-
-* penalty: Penalty for violating the caliper. Set to Inf by default.
-
-The key inputs to the function *match_2C_mat* are two distance matrices. The simplest way to construct a n_t-by_n_c distance
-matrix is to use the function *match_on* in the **R** package **optmatch**.
-
-## Examples
-
-We give two examples below to illustrate *match_2C_mat*.
-
-In the first example, we construct *dist_mat_1* based on the Mahalanobis distance between all covariates in X, and *dist_mat_2* based on the Euclidean distance of the covariate *dadeduc*. A large penalty lambda is applied to the second distance matrix so that the algorithm is forced to find an optimal match that satisfies (near-)fine balance on the nominal variable *dadeduc*. We do not use any caliper in this example.
-
-```{r mat no caliper, echo=TRUE}
-# Construct a distance matrix based on Mahalanobis distance
-dist_mat_1 = optmatch::match_on(IV~female+black+bytest+dadeduc+momeduc+fincome, 
-                      method = 'mahalanobis', data = dt_Rouse)
-
-# Construct a second distance matrix based on variable dadeduc
-dist_mat_2 = optmatch::match_on(IV ~ dadeduc, method = 'euclidean', 
-                                data = dt_Rouse)
-matching_output_mat = match_2C_mat(Z, dt_Rouse, dist_mat_1, dist_mat_2, 
-                               lambda = 10000, controls = 1,
-                               p_1 = NULL, p_2 = NULL)
-
-# Examine the balance after matching
-tb_mat = check_balance(Z, matching_output_mat, 
-                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
-                   plot_propens = FALSE)
-
-print(tb_mat)
+```{r, include=FALSE, eval=TRUE}
+knitr::opts_chunk$set(eval = TRUE)
 ```
-
-In the second example, we further incorporate a propensity score caliper in the left network. The code chunk below implements a propensity score caliper
-of size 0.05 and connecting each treated only to at most 100 closest controls.
-
-```{r mat with caliper, echo=TRUE}
-matching_output_mat_caliper = match_2C_mat(Z, dt_Rouse, 
-                                 dist_mat_1, dist_mat_2, 
-                                 lambda = 100000, controls = 1,
-                                 p_1 = propensity, 
-                                 caliper_1 = 0.05, k_1 = 100)
-```
-Function *match_2C_mat* is meant to be of primary interest to users who are familiar with the package **optmatch** and constructing distance matrices
-using the function *match_on*. Package **match2C** offers functions that allow users to construct a distance list directly from the data, possibly with
-user-supplied distance functions. This is the topic of the next section.
 
 
 # Function *match_2C_list*: Matching with Two User-Supplied Distance Lists
@@ -475,29 +440,6 @@ user-supplied distance functions. This is the topic of the next section.
 A distance list is the most fundamental building block for network-flow-based statistical matching. Function *create_list_from_mat* allows
 users to convert a distance matrix to a distance list and function *create_list_from_scratch* allows users to construct a distance list directly
 from data. Function *create_list_from_scratch* is highly flexible and allows users to construct a distance list tailored to their specific needs.
-
-The code chunk below illustrates the usage of *create_list_from_mat* by creating a distance list object *list_0* from the distance matrix
-*dist_mat_1*. Note that the distance list has $1,122 \times 1,915 = 2,148,630$ edges, i.e., each of the 1,122 treated subject is connected 
-to each of the 1,915 control subjects.
-
-```{r list create list from mat no caliper, echo = TRUE}
-dist_mat_1 = optmatch::match_on(IV ~ female + black + bytest + 
-                                dadeduc + momeduc + fincome, 
-                                method = 'mahalanobis', data = dt_Rouse)
-
-list_0 = create_list_from_mat(Z, dist_mat_1, p = NULL) 
-length(list_0$start_n) # number of edges in the network
-identical(length(list_0$start_n), n_t*n_c) # Check # of edges is n_t * n_c
-```
-
-Function *create_list_from_mat* also allows caliper. Below, We apply a propensity score caliper of size $0.05$ to remove edges by setting *p = propensity* and *caliper = 0.05*. Observe that the number of edges is almost halved now.
-
-```{r list create list from mat with caliper, echo = TRUE}
-list_1 = create_list_from_mat(Z, dist_mat_1, 
-                              p = propensity, 
-                              caliper = 0.05)
-length(list_1$start_n) # Number of edges is almost halved
-```
 
 Function *create_list_from_scratch* allows users to construct a distance list without first creating a distance matrix.
 This is a great tool for users who are interested in experimenting/developing different matching strategies. Roughly speaking, 
@@ -612,6 +554,11 @@ dist_list_exact_dad_mom_with_caliper = create_list_from_scratch(Z, X,
 ```
 
 
+```{r, include=FALSE, eval=TRUE}
+knitr::opts_chunk$set(eval = TRUE)
+```
+
+
 
 ## Matching with One or Two Distance Lists
 Function *match_2C_list* takes as input the following arguments:
@@ -638,6 +585,11 @@ If only one dist_list_1 is supplied (i.e., dist_list_2 = NULL), then a tradition
 performed. Option *lambda* is a tuning parameter that controls the relative trade-off between two networks.
 
 We give some examples below to illustrate the usage.
+
+```{r, include=FALSE}
+if (!requireNamespace("optmatch", quietly = TRUE)) knitr::opts_chunk$set(eval = FALSE)
+```
+
 
 ### Example I: Optimal Macthing within Propensity Score Caliper (Rosenbaum and Rubin, 1985)
 
@@ -745,323 +697,7 @@ print(tb_ex3_2)
 ```
 
 
-### Example IV: Optimal matching with fine balance or near-fine balance
 
-We illustrate how to perform an optimal matching with fine balance and exact matching. Exact macthing is a constraint on who is matched to whom and hence implemented using the left network. We build a Mahalanobis-distance-based distance list subject to a propensity score caliper and exact matching constraints on female and black; see dist_list_1.
-
-On the other hand, fine balance is concerned about the marginal distribution, not who gets to matched to whom, and hence is implemented using the right network. On the right, we build a distance list that uses a 0/1 distance on variables father’s education and mother’s education, so that the joint distribution of father’s education and mother’s education are to be finely balanced; see dist_list_2.
-
-One can check the resulting match has exactly matched on female and black, and finely balanced father’s and mother’s education.
-
-
-```{r dist list ex4, echo=TRUE}
-dist_list_1 = create_list_from_scratch(Z = Z, X = X, 
-                                       exact = c('female', 'black'),
-                                       p = propensity,
-                                       caliper_low = 0.15,
-                                       method = 'maha')
-
-dist_list_2 = create_list_from_scratch(Z = Z, X = X[, c('dadeduc', 'momeduc')],
-                                                  method = '0/1')
-matching_output_ex4 = match_2C_list(Z, dt_Rouse, dist_list_1, dist_list_2, lambda = 1000)
-
-tb_ex4 = check_balance(Z, matching_output_ex4, 
-                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
-                        plot_propens = TRUE, propens = propensity)
-print(tb_ex4)
-
+```{r, include=FALSE, eval=TRUE}
+knitr::opts_chunk$set(eval = TRUE)
 ```
-
-### Example V: Force certain controls in the final matched cohort
-
-To force certain controls in the matched cohort, researchers may further apply the function *force_control* to the
-constructed distance lists. Below, we update the *dist_list_1* and *dist_list_2* from Example IV, and force the first
-50 controls in the final matched cohorts, while still retain exact matching on female and black, and near-fine balance
-on father's education and mother's education.
-
-```{r dist list ex5, echo=TRUE}
-
-# The first 50 controls must be included
-include_vec = c(rep(1, 50), rep(0, n_c - 50))
-
-# dist_list_1 and dist_list_2 are from example 4 above
-dist_list_1_update = force_control(dist_list_1, Z = Z, include = include_vec)
-dist_list_2_update = force_control(dist_list_2, Z = Z, include = include_vec)
-
-matching_output_ex5 = match_2C_list(Z, dt_Rouse, 
-                                    dist_list_1_update, 
-                                    dist_list_2_update, lambda = 1000)
-
-tb_ex5 = check_balance(Z, matching_output_ex5, 
-                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
-                        plot_propens = TRUE, propens = propensity)
-print(tb_ex5)
-```
-
-
-
-### Example VI: Recover the *match_2C* default match using *match_2C_list*
-
-As the last example, we show how to construct the default matching in the *match_2C* main function by constructing
-appropriate distance lists for the left and right networks. 
-
-We construct the left network using Mahalanobis distance subject to the propensity score caliper and the exact
-matching constraints. This is *dist_list_left*.
-
-The right network has two parts. We first consturct a distance list based on the L1 distance of the propensity 
-score. This distance list serves to balance the marginal distribution of the propensity score. This is
-*dist_list_right_pscore*. We then construct a distance list based on 0/1 distance on the variables to be finely
-balanced; see Example IV. This is *dist_list_right_fb*. We then combined these two distance lists and call it *dist_list_right*, 
-and we use a penalty 100 to prioritize the fine balance constraint over balancing the propensity score. 
-
-Optionally, one can use *force_control* function to force including certain controls; see Example V.
-
-Lastly, we use function *match_2C_list* to solve the resulting optimization problem, where we use a penalty 
-lambda = 100 to priority the right network over the left.
-
-One can check that the match below exactly matches on black, finely balances father's education, maximally
-balances the propensity score distributions in two groups, and uses the first 50 controls.
-
-```{r dist list ex6, echo=TRUE}
-# Construct distance list on the left: Maha subject to pscore caliper
-dist_list_left = create_list_from_scratch(Z = Z, X = X,
-                                            exact = c('black'),
-                                            p = propensity,
-                                            caliper_low = 0.2,
-                                            method = 'maha')
-
-# Construct distance list on the right: L1 distance on the pscore plus fine balance
-dist_list_right_pscore = create_list_from_scratch(Z = Z, X = propensity,
-                                             p = propensity,
-                                             caliper_low = 1,
-                                             method = 'L1')
-
-dist_list_right_fb = create_list_from_scratch(Z = Z, X = X[, c('dadeduc')],
-                                                  p = propensity,
-                                                  caliper_low = 1,
-                                                  method = '0/1')
-
-dist_list_right = dist_list_right_pscore
-dist_list_right$d = dist_list_right$d + 100*dist_list_right_fb$d 
-
-
-# The first 50 controls must be included
-include_vec = c(rep(1, 50), rep(0, n_c - 50))
-
-# dist_list_1 and dist_list_2 are from example 4 above
-dist_list_left_update = force_control(dist_list_left, Z = Z, include = include_vec)
-dist_list_right_update = force_control(dist_list_right, Z = Z, include = include_vec)
-
-matching_output_ex6 = match_2C_list(Z = Z, dataset = dt_Rouse,
-                                  dist_list_1 = dist_list_left_update,
-                                  dist_list_2 = dist_list_right_update,
-                                  lambda = 100)
-
-tb_ex6 = check_balance(Z, matching_output_ex6, 
-                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
-                        plot_propens = TRUE, propens = propensity)
-print(tb_ex6)
-```
-
-# Template Matching: Constructing Matched Samples with Enhanced External Validity
-Well-balanced and closely matched samples help remove bias and enhance the matched cohort study's
-*internal validity*. In many practical situations, empirical researchers may have in mind a target 
-population or template whose covariate distribution may differ from that of the matched samples. 
-To enhance a matched cohort analysis' *external validity*, it may be desirable to create closely matched
-samples whose covariate distribution (of a subset of or all covariates) mimics that of the target population.
-Function *template_match* serves precisely this purpose. 
-
-## Data prepartion
-Recall that basic inputs to a matching function are covariates to be matched (X), a vector of exposure (Z),
-and the original dataset to be matched. In addition to these basic elements, users need to further prepare
-one template data frame consisting of *n_template* units each with *d* covariates. This template data frame
-is the target distribution of interest. 
-
-Note that X has *p* columns while the template has *d* columns such that $d \leq p$. In many practical situation,
-we may want to create matched pairs that are closely matched for p covariates, while mimicking the template in 
-$d\leq p$ covariates. When preparing the dataset, users need to make sure that the first d columns of X refer to
-the same d covariates as the template data frame.
-
-
-## Function *template_match*
-
-Function *template_match* takes as input the following arguments:
-
-* template: A n_template-by-d data frame of template units.
-
-* X: A n-by-p matrix of covariates with column names.
-
-* Z: A length-n vector of treatment indicator.
-
-* dataset: Dataset to be matched.
-
-* multiple: Number of treated units matched to each template unit. Default is 1.
-
-* lambda: A tuning parameter controlling the trade-off between internal and external validity. A large lambda gives priority to the external validity, i.e., resemblance to the template. Default is 1.
-
-* caliper_gscore: Size of generalizability caliper.
-
-* k_gscore: Connect each template unit to k_gscore treated units closest in the generalizability score.
-
-* penalty_gscore: Penalty for violating the generalizability caliper. Set to Inf by default.
-
-* caliper_pscore: Size of propensity score caliper.
-
-* k_pscore: Connect each treated to k_pscore control units closest in the propensity score.
-
-* penalty_pscore: Penalty for violating the propensity score caliper. Set to Inf by default.
-
-
-Arguments X, Z, dataset are the same as their counterparts in the function *match_2C*. 
-
-Argument *template* consists of units in the target population. The template data frame necessarily has $d \leq p$ columns and 
-these $d$ columns refer to the same variables as the first $d$ columns of the matrix X.
-
-Argument *multiple* can take any integer number between $1$ and $n_t/n_template$. For instance,
-if the template consists of $1,000$ units and we have $3,211$ treated units and $10,000$ control units to be matched, then
-*multiple* can then take $1$, $2$, or $3$, and the algorithm will form $1,000$ pairs (corresponding to multiple = 1), or $2,000$
-matched pairs (corresponding to multiple = 2), or $3,000$ matched pairs (corresponding to multiple = 3). Template matching is
-a particular form of the so-called ``optimal subset matching" described in Rosenbaum (2012).
-
-Argument *lambda* controls the trade-off between internal validity, i.e., matched pairs being closely matched and well balanced,
-and external validity, i.e., matched pairs resemble the target population in the joint distribution of certain covariates. A large
-lambda gives priority to external validity. If lambda is set to 0, the algorithm would completely ignore the template.
-
-Arguments *caliper_gscore*, *k_gscore*, and *penalty_gscore* control the size of the generalizability score caliper and penalty for
-violating this caliper. A generalizability score is a version of the propensity score and is equal to the probability of being selected
-into the template as opposed to the treated population given observed covariates; see Stuart et al. (2011) for more details.
-
-Arguments *caliper_pscore*, *k_pscore*, and *penalty_pscore* control the size of the propensity score caliper and penalty for
-violating this caliper.
-
-## Function *check_balance_template*
-After performing the template match, we may then use the function *check_balance_template* to examine the balance of matched samples 
-before and after matching, and their resemblance to the template. The syntax of the function *check_balance_template* is straightforward; 
-it takes as input the original dataset, the template data frame, the output from the function *template_match*, and a vector of 
-covariate names whose balance is of interest.
-
-## Example
-
-### Data preparation
-we first generate data to be matched. We generate $n_t = 500$ treated units and $n_c = 1500$ control units. Each unit is associated
-with $p = 10$ covariates. Covariate V1 follows $N(1, 1)$ in the treated population and $N(0.5, 0)$ in the control population. Covariates
-V2 through V10 follow $N(0, 1)$ in both treated and control population.
-
-```{r template match generate data, echo = TRUE}
-set.seed(123)
-ratio = 3 # Control-to-treated ratio
-n_t = 500 # 500 treated units
-n_c = n_t * ratio # 1500 control units
-p = 10 # Number of covariates
-
-# Generate covariates for the treated and control units
-X_treated = rmvnorm(n_t, mean = c(1, rep(0, p - 1)), sigma = diag(p))
-X_control = rmvnorm(n_c, mean = rep(0.5, p), sigma = diag(p))
-
-X = rbind(X_treated, X_control) # 2000-by-10 matrix of covariates
-colnames(X) = c('V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10')
-Z = c(rep(1, n_t), rep(0, n_c)) # Length-2000 vector of treatment status
-dataset = data.frame(X, Z) # The original dataset
-
-head(X)
-```
-
-We then generate a template consisting of $d = 5$ variables and $n_\text{template} = 300$ units. Covariate V1 follows $N(0.4, 1)$ and 
-covariates V2 through V5 follow $N(0, 1)$. 
-
-```{r template match generate template, echo = TRUE}
-n_template = 100
-beta = 0.4
-d = 5
-template = as.data.frame(rmvnorm(n_template, mean = c(beta, rep(0,d-1))))
-head(template)
-```
-
-### Design I: 100 or 300 matched pairs, propensity score caliper, disregard the template 
-We first construct $100$ matched treated-to-control pairs (by setting multiple = 1) that are closely matched on $p = 10$ covariates. We do not require resemblance to the target template by setting lambda = 0. We implement a hard propensity score caliper by setting the propensity score
-caliper size to $0.1$ and the penalty to Infinity. The resulting $100$ matched pairs are closely matched, but lack resemblance to the target 
-template. The covariate V1 has a mean of $0.80$ and $0.74$ in the matched treated and matched control groups, respectively, while it has a mean of
-$0.36$ in the template.
-
-```{r template basic 1, echo = TRUE}
-template_match_res = template_match(template = template, X = X, Z = Z, 
-                                     dataset = dataset, multiple = 1, lambda = 0,
-                                     caliper_pscore = 0.1, penalty_pscore = Inf)
-
-check_balance_template(dataset = dataset,
-                       template = template, 
-                      template_match_object = template_match_res, 
-                      cov_list = c('V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10'))
-```
-
-We may create $300$ matched pairs by setting multiple = 3.
-
-```{r template basic 1 300, echo = TRUE}
-template_match_res1 = template_match(template = template, X = X, Z = Z, 
-                                     dataset = dataset, multiple = 3, lambda = 0,
-                                     caliper_pscore = 0.1, penalty_pscore = Inf)
-
-check_balance_template(dataset = dataset,
-                       template = template, 
-                      template_match_object = template_match_res1, 
-                      cov_list = c('V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10'))
-```
-
-
-### Design II: 100 matched pairs, propensity score caliper, prioritize external validity
-In the second design, we construct $100$ matched treated-to-control pairs (by setting multiple = 1) that are closely matched on $p = 10$ covariates and mimicking the covariate distributions of the template in V1 through V5. We give strong priority to the external validity, i.e., resemblance to the template, by setting lambda = 1000.  Note that after template matching, V1 now has a mean of $0.56$ in the matched treated group and $0.59$ in 
-the matched control group, better resembling the template. 
-
-```{r template basic 2, echo = TRUE}
-template_match_res2 = template_match(template = template, X = X, Z = Z, 
-                                     dataset = dataset, multiple = 1, lambda = 1000,
-                                     caliper_pscore = 0.2, penalty_pscore = Inf)
-
-check_balance_template(dataset = dataset,
-                       template = template, 
-                      template_match_object = template_match_res2, 
-                      cov_list = c('V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10'))
-```
-
-
-### Design III: 100 matched pairs, generalizability score caliper, prioritize external validity
-In the third design, we further set the generalizability caliper to a small size (caliper_gscore = 0.02) to further facilitate balancing
-the covariate distribution of the matched samples and that of the template. This time, the means of V1 reduce to $0.38$ and $0.40$ in the matched
-treated and control groups, respectively, and they now closely resemble that of the template which is $0.36$.
-
-```{r template basic 3, echo = TRUE}
-template_match_res3 = template_match(template = template, X = X, Z = Z, 
-                                     dataset = dataset, multiple = 1, lambda = 100,
-                                     caliper_gscore = 0.02, penalty_gscore = 100)
-
-
-check_balance_template(dataset = dataset,
-                       template = template, 
-                      template_match_object = template_match_res3, 
-                      cov_list = c('V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9', 'V10'))
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

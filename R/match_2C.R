@@ -20,6 +20,9 @@
 #'@param include A binary vector indicating which controls must be included (length(include) = sum(1-Z)).
 #'
 #'@examples
+#'\dontrun{
+#'To run the example, one must first install the optmatch package
+#'and agree to its terms of use.
 #'
 #'# We first prepare the input X, Z, propensity score
 #'
@@ -36,8 +39,8 @@
 #'k_left = 100, k_right = 100,
 #'dataset = dt_Rouse)
 #'
-#'
 #' # Please refer to the vignette for many more examples.
+#'}
 #'
 #'@return  This function returns a list of three objects including the feasibility
 #'of the matching problem and the matched controls organized in different formats.

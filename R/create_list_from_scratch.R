@@ -49,6 +49,7 @@
 #'         See documentation of function ``create_list_from_mat'' for more details.
 #'
 #'@examples
+#'\dontrun{
 #'# We first prepare the input X, Z, propensity score
 #'
 #'attach(dt_Rouse)
@@ -69,7 +70,7 @@
 #'
 #'# More examples, including how to use a user-supplied
 #'# distance function, can be found in the vignette.
-#'
+#'}
 #'@importFrom mvnfast maha
 #'@importFrom stats cov var
 #'@export
