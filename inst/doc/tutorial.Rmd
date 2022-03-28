@@ -27,9 +27,6 @@ library(mvtnorm)
 
 # Introduction
 
-To run all functionalities in this tutorial, one needs to first install the package optmatch and agree to its
-terms of use. Package optmatch may be downloaded from <https://github.com/markmfredrickson/optmatch> if not available on CRAN.
-
 ## Preparation of data
 This file serves as an introduction to the **R** package **match2C**. We first load the package and an illustrative dataset from Rouse (1995). For the purpose of illustration, we will mostly work with 6 covariates: two nominal (black and female), two ordinal (father's education and mother's education), and two continuous (family income and test score). Treatment is an instrumental-variable-defined exposure, equal to $1$ if the subject is doubly encouraged, meaning the both the excess travel time and excess four-year college tuition are larger than the median, and to be $0$ if the subject is doubly discouraged. There are $1,122$ subjects that are doubly encouraged (treated), and $1,915$ that are doubly discouraged (control). 
 
@@ -60,7 +57,7 @@ We define some useful statistical matching terminologies:
 * **Tripartite Matching**: Matching control subjects to treated subjects based on a tripartite network. A tripartite 
 network consists of two bipartite networks: a left network and a right network, where the right network is a mirror
 copy of the left network in nodes, but with possibly different distance structure. Typically the left network is responsible
-for close pairing and the right network is responsible for balancing; See Zhang et al., 2021 for details.
+for close pairing and the right network is responsible for balancing; See Zhang et al., (JASA, 2021) for details.
 
 * **Pair Matching**: Matching one control subject to one treated subject.
 
@@ -78,7 +75,7 @@ total distances is minimized.
 For more details on statistical matching and statistical inference procedures after matching, see *Observational Studies* (Rosenbaum, 2002) and *Design of Observational Studies* (Rosenbaum, 2010).
 
 
-# Statistical Matching Workflow: Match, Check Blance, and (Possibly) Iterate
+# Statistical Matching Workflow: Match, Check Balance, and (Possibly) Iterate
 
 ## An Overview of the Family of Three Matching Functions *match_2C*, *match_2C_mat*, and *match_2C_list*
 In the package **match2C**, three functions are primarily responsible for the main task statistical matching. These three functions
@@ -122,10 +119,6 @@ a list of the following three elements:
 
 * *matched_data_in_order*: a data frame organized in the order of matched sets and otherwise the same as *data_with_matched_set_ind*. Null will be returned if the matching is unfeasible.
 
-```{r, include=FALSE}
-if (!requireNamespace("optmatch", quietly = TRUE)) knitr::opts_chunk$set(eval = FALSE)
-```
-
 ```{r intro example, echo=FALSE}
 dist_list_pscore = create_list_from_scratch(Z, X, exact = NULL, p = propensity, 
                                        caliper_low = 0.008, 
@@ -160,10 +153,6 @@ head(matching_output_example$matched_data_in_order, 6)
 ```
 
 
-```{r, include=FALSE, eval=TRUE}
-knitr::opts_chunk$set(eval = TRUE)
-```
-
 ## Checking Balance
 Statistical matching belongs to the design stage of an observational study. The ultimate goal of statistical matching
 is to embed observational data into an approximate randomized controlled trial and the matching process should always 
@@ -191,10 +180,6 @@ There are six columns of the balance table:
 
 1. Standardized differences *after* matching.
 
-```{r, include=FALSE}
-if (!requireNamespace("optmatch", quietly = TRUE)) knitr::opts_chunk$set(eval = FALSE)
-```
-
 
 ```{r intro example check balance table, echo=TRUE}
 tb_example = check_balance(Z, matching_output_example, 
@@ -204,20 +189,12 @@ print(tb_example)
 ```
 
 
-```{r, include=FALSE, eval=TRUE}
-knitr::opts_chunk$set(eval = TRUE)
-```
-
 
 Function *check_balance* may also plot the distribution of the propensity score among the treated subjects, all conrol 
 subjects, and the matched control subjects by setting option *plot_propens = TRUE* and supplying the option *propens* with
 estimated propensity scores as shown below. In the figure below, the blue curve corresponds to the propensity score distribution
 among 1,122 treated subjects, the red curve among 1,915 control subjects, and the green curve among 1,122 matched controls.
 It is evident that after matching, the propensity score distribution aligns better with that of the treated subjects.
-
-```{r, include=FALSE}
-if (!requireNamespace("optmatch", quietly = TRUE)) knitr::opts_chunk$set(eval = FALSE)
-```
 
 ```{r intro example check balance plot, echo=TRUE}
 tb_example = check_balance(Z, matching_output_example, 
@@ -226,10 +203,6 @@ tb_example = check_balance(Z, matching_output_example,
               plot_propens = TRUE, propens = propensity)
 ```
 
-
-```{r, include=FALSE, eval=TRUE}
-knitr::opts_chunk$set(eval = TRUE)
-```
 
 # Introducing the Main Function *match_2C*
 
@@ -255,10 +228,6 @@ The code chunk below displays how to perform a basic match using function *match
 and then check the balance of such a match. The balance is very good and the propensity score distributions 
 in the treated and matched control group almost perfectly align with each other.
 
-
-```{r, include=FALSE}
-if (!requireNamespace("optmatch", quietly = TRUE)) knitr::opts_chunk$set(eval = FALSE)
-```
 
 
 ```{r match2C no caliper, echo=TRUE}
@@ -428,276 +397,3 @@ matched_data_control = matched_data[matched_data$IV == 0,]
 head(matched_data_control) # Check the matched_set column
 ```
 
-```{r, include=FALSE, eval=TRUE}
-knitr::opts_chunk$set(eval = TRUE)
-```
-
-
-# Function *match_2C_list*: Matching with Two User-Supplied Distance Lists
-
-## Constructing Distance Lists from Data
-
-A distance list is the most fundamental building block for network-flow-based statistical matching. Function *create_list_from_mat* allows
-users to convert a distance matrix to a distance list and function *create_list_from_scratch* allows users to construct a distance list directly
-from data. Function *create_list_from_scratch* is highly flexible and allows users to construct a distance list tailored to their specific needs.
-
-Function *create_list_from_scratch* allows users to construct a distance list without first creating a distance matrix.
-This is a great tool for users who are interested in experimenting/developing different matching strategies. Roughly speaking, 
-*create_list_from_scratch* is an analogue of the function *match_on* in the package *optmatch*. 
-
-Currently, there are 5 default distance specifications implemented: *maha* (Mahalanobis distance), *L1* (L1 disance), 
-*robust maha* (robust Mahalanobis distance), *0/1* (distance = 0 if and only if covariates are the same), 
-and *Hamming* (Hamming distance), and *other* allows user-supplied distance functions. 
-We will defer a discussion on how to use this user-supplied option to the next section.
-
-The minimal input to the function *create_list_from_scratch* is treatment Z and covariate matrix X. The user
-may choose the distance specification via the option *method*. Other useful options include the following:
-
-* Option *exact* allows users to specify variables that need to be exactly matched.
-* Option *p* allows users to specify a variable, e.g., the propensity score, as a caliper.
-* Options *caliper_low* and *caliper_high* set the size of this caliper. The size of the caliper is
-  defined by [variable - caliper_low, variable + caliper_high]. Setting *caliper_low* and *caliper_high* to 
-  different magnitudes allows a so-called asymmetric caliper (Yu and Rosenbaum, 2020). If only *caliper_low* 
-  is used, *caliper_high* is then set to *caliper_low* by default and a symmetric caliper is used.
-* Option *k* allows users to further sparsify the network by connecting each treated only to k controls
-  closest in the caliper.
-* Option *penalty* allows users to make the specified caliper a *soft* caliper, in the sense that the caliper
-  is allowed to be violated at a cost of *penalty*. Option *penalty* is set to *Inf* by default, i.e., a *hard* caliper
-  is implemented.
-
-Below, we give several examples below to illustrate its usage.
-
-First, we create a list representation using the Mahalanobis/Hamming/robust Mahalanobis distance without 
-any caliper or exact matching requirement.
-```{r list from scratch ex1, echo=TRUE}
-# Mahalanobis distance on all variables
-dist_list_vanilla_maha = create_list_from_scratch(Z, X, exact = NULL, 
-                                                  method = 'maha') 
-
-# Hamming distance on all variables
-dist_list_vanilla_Hamming = create_list_from_scratch(Z, X, exact = NULL, 
-                                                      method = 'Hamming') 
-
-# Robust Mahalanobis distance on all variables
-dist_list_vanilla_robust_maha = create_list_from_scratch(Z, X, exact = NULL, 
-                                                      method = 'robust maha') 
-
-```
-
-
-We further specify a symmetric propensity score caliper of size $0.05$ and $k = 100$. 
-
-```{r list from scratch ex2, echo=TRUE}
-# Mahalanobis distance on all variables with pscore caliper
-dist_list_pscore_maha = create_list_from_scratch(Z, X, exact = NULL, 
-                                       p = propensity, 
-                                       caliper_low = 0.05, 
-                                       k = 100, 
-                                       method = 'maha') 
-
-# Hamming distance on all variables with pscore caliper
-dist_list_pscore_Hamming = create_list_from_scratch(Z, X, exact = NULL, 
-                                       p = propensity, 
-                                       caliper_low = 0.05, 
-                                       k = 100, 
-                                       method = 'Hamming') 
-
-# Robust Mahalanobis distance on all variables with pscore caliper
-dist_list_pscore_robust_maha = create_list_from_scratch(Z, X, exact = NULL, 
-                                       p = propensity, 
-                                       caliper_low = 0.05, 
-                                       k = 100, 
-                                       method = 'robust maha') 
-```
-
-
-If we specify too small a caliper, the problem may fail in the sense that some treated subjects are not
-connected to any control. See the example below.
-
-```{r list from scratch ex small caliper fail, echo=TRUE}
-dist_list_pscore_maha_hard = create_list_from_scratch(Z, X, exact = NULL, 
-                                       p = propensity, 
-                                       caliper_low = 0.001, 
-                                       method = 'maha') 
-
-```
-
-In this case, users are advised to use a soft caliper by specifying a large penalty or increase the caliper size. See the example below.
-
-```{r list from scratch ex soft caliper, echo=TRUE}
-dist_list_pscore_maha_soft = create_list_from_scratch(Z, X, exact = NULL, 
-                                       p = propensity, 
-                                       caliper_low = 0.001, 
-                                       method = 'maha', 
-                                       penalty = 1000) 
-
-```
-
-
-Next, we create a list representation without caliper; however, we insist that dad's education is exactly matched. This can be done by setting the option *exact* to a vector of names of variables to be exactly matched.
-
-```{r list from scratch ex3, echo=TRUE}
-dist_list_exact_dadeduc_maha = create_list_from_scratch(Z, X, 
-                                                        exact = c('dadeduc'), 
-                                                        method = 'maha') 
-```
-
-Finally, we create a list representation with an assymetric propensity score caliper and $k = 100$; moreover, we insist that both dad's education and mom's education are exactly matched.
-```{r list from scratch ex4, echo=TRUE}
-dist_list_exact_dad_mom_with_caliper = create_list_from_scratch(Z, X, 
-                                                exact = c('dadeduc', 'momeduc'), 
-                                                p = propensity, 
-                                                caliper_low = 0.05, 
-                                                caliper_high = 0.1,
-                                                k = 100, 
-                                                method = 'maha') 
-```
-
-
-```{r, include=FALSE, eval=TRUE}
-knitr::opts_chunk$set(eval = TRUE)
-```
-
-
-
-## Matching with One or Two Distance Lists
-Function *match_2C_list* takes as input the following arguments:
-
-* Z: A length-n vector of treatment indicator.
-
-* dataset: The original dataset.
-
-* dist_list_1: A distance list object returned by the function *create_list_from_scratch*.
-
-* dist_list_2: A second distance list object returned by the function *create_list_from_scratch*.
-
-* lambda: A penalty that controls the trade-off between two parts of the network.
-
-* controls: Number of controls matched to each treated. Default is set to 1.
-
-* overflow: A logical value indicating if overflow protection is turned on. If overflow = TRUE, 
-then the matching is feasible as long as the left network is feasible. Default is set to FALSE.
-
-
-The key inputs are two distance list objects. The object *dist_list_1* represents the network
-structure of the left network, while *dist_list_2* represents the structure of the network on the right.
-If only one dist_list_1 is supplied (i.e., dist_list_2 = NULL), then a traditional bipartite match is
-performed. Option *lambda* is a tuning parameter that controls the relative trade-off between two networks.
-
-We give some examples below to illustrate the usage.
-
-```{r, include=FALSE}
-if (!requireNamespace("optmatch", quietly = TRUE)) knitr::opts_chunk$set(eval = FALSE)
-```
-
-
-### Example I: Optimal Macthing within Propensity Score Caliper (Rosenbaum and Rubin, 1985)
-
-The classical methodology can be recovered using the following code. Note that in this example, we 
-only need to construct one distance list and the match is a bipartite one.
-
-```{r dist list ex1, echo=TRUE}
-# Construct a distance list representing the network structure on the left.
-dist_list_pscore = create_list_from_scratch(Z, X, exact = NULL, 
-                                       p = propensity, 
-                                       caliper_low = 0.008, 
-                                       k = NULL, 
-                                       method = 'maha')
-
-# Perform matching. Set dist_list_2 = NULL as we are 
-# performing a bipartite matching.
-matching_output_ex1 = match_2C_list(Z, dt_Rouse, dist_list_pscore, 
-                                    dist_list_2 = NULL, 
-                                    controls = 1)
-```
-
-
-### Example II: Optimal Macthing on the Left and Stringent Propensity Score Caliper on the Right
-
-We remove the propensity score caliper in the left network and put a more stringent one on the right. 
-This allows the algorithm to separate close pairing (using the Mahalanobis distance on the left) and 
-balancing (using a stringent propensity score caliper on the right). One may check that in this example,
-this little trick does simultaneously improve the closeness in pairing AND the overall balance.
-
-Note that we make the propensity score caliper on the right a soft caliper (by setting penalty = 100 instead
-of the detaul Inf) to ensure feasibility.
-
-```{r dist list ex2, echo=TRUE}
-# Mahalanobis distance on all variables; no caliper
-dist_list_no_caliper = create_list_from_scratch(Z, X, exact = NULL, 
-                                                p = NULL, 
-                                                method = 'maha')
-
-# Connect treated to controls within a stringent propensity score caliper.
-# We use a soft caliper here to ensure feasibility.
-dist_list_2 = create_list_from_scratch(Z = Z, X = rep(1, length(Z)), 
-                                       exact = NULL,
-                                       p = propensity, 
-                                       caliper_low = 0.002, 
-                                       method = 'L1', 
-                                       k = NULL,
-                                       penalty = 100)
-
-matching_output_ex2 = match_2C_list(Z, dt_Rouse, 
-                                    dist_list_no_caliper, 
-                                    dist_list_2, 
-                                    lambda = 1000, controls = 1)
-```
-
-
-### Example III: Exact Matching on One (or More) Variable while Balancing Others
-
-Suppose we would like to construct an optimal pair matching and insist two subjects in the same matched pair match exactly on father's and mother's education. We compare two implementations below. Our first implementation is a conventional one based on a bipartite graph:
-
-```{r dist list ex3_1, echo=TRUE}
-# Mahalanobis distance with exact matching on dadeduc and momeduc
-dist_list_1 = create_list_from_scratch(Z, X, exact = c('dadeduc', 'momeduc'), 
-                                       p = propensity, caliper_low = 0.05, 
-                                       method = 'maha')
-
-matching_output_ex3_1 = match_2C_list(Z, dt_Rouse, dist_list_1, 
-                                  dist_list_2 = NULL, lambda = NULL)
-```
-
-
-Our second implementation uses the distance list on the left to ensure exact matching and the distance list on the right to
-balance the other covariates.
-
-```{r dist list ex3_2, echo=TRUE}
-# Maha distance with exact matching on dadeduc and momeduc
-dist_list_1 = create_list_from_scratch(Z, X, 
-                                       exact = c('dadeduc', 'momeduc'), 
-                                       method = 'maha')
-
-# Maha distance on all other variables
-dist_list_2 = create_list_from_scratch(Z, X[, c('female', 'black', 'bytest', 'fincome')], 
-                                       p = propensity, 
-                                       caliper_low = 0.05, 
-                                       method = 'maha')
-
-matching_output_ex3_2 = match_2C_list(Z, dt_Rouse, dist_list_1, dist_list_2, lambda = 100)
-```
-
-
-One can easily verify that both implementations match exactly on *dadeduc* and *momeduc*; however,
-the second implementation achieves better overall balance.
-
-```{r dist list ex3 check balance, echo=TRUE}
-tb_ex3_1 = check_balance(Z, matching_output_ex3_1, 
-                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
-                        plot_propens = TRUE, propens = propensity)
-
-print(tb_ex3_1)
-
-tb_ex3_2 = check_balance(Z, matching_output_ex3_2, 
-                        cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
-                        plot_propens = TRUE, propens = propensity)
-print(tb_ex3_2)
-
-```
-
-
-
-```{r, include=FALSE, eval=TRUE}
-knitr::opts_chunk$set(eval = TRUE)
-```

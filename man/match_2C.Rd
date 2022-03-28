@@ -59,9 +59,6 @@ This function performs an optimal statistical matching that sequentially balance
 within-matched-pair Mahalanobis distance.
 }
 \examples{
-\dontrun{
-To run the example, one must first install the optmatch package
-and agree to its terms of use.
 
 # We first prepare the input X, Z, propensity score
 
@@ -79,6 +76,6 @@ k_left = 100, k_right = 100,
 dataset = dt_Rouse)
 
 # Please refer to the vignette for many more examples.
-}
+
 
 }
