@@ -30,7 +30,7 @@ template_match(
 
 \item{multiple}{Number of treated units matched to each template unit. Default is 1.}
 
-\item{lambda}{A tuning parameter controlling the trade-off between internal and external validity. A large lambda favors resemblance to the template.}
+\item{lambda}{A tuning parameter controlling the trade-off between internal and external validity. A large lambda favors internal validity of the matched sample. A small lambda favors resemblance to the template.}
 
 \item{caliper_gscore}{Size of generalizability caliper.}
 

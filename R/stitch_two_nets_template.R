@@ -41,9 +41,9 @@ stitch_two_nets_template <- function(net1, net2, n_c, lambda, multiple = 1) {
     return(c(net1$ucap, tail(net2$ucap, -n_t)))
   }
   construct_costn <- function(n_temp, n_t, n_c, net1, net2) {
-    first_part = lambda*head(net1$cost, -n_t)
+    first_part = 100*head(net1$cost, -n_t)
     second_part = rep(0, n_t)
-    third_part = tail(net2$cost, -n_t)
+    third_part = 100*lambda*tail(net2$cost, -n_t)
     return(c(first_part, second_part, third_part))
   }
   n_temp = net1$b[1]/multiple

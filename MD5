@@ -1,4 +1,4 @@
-2124747a5d7dfdd570b4a0a43021a437 *DESCRIPTION
+01b2bfb63e56c78d01a4ad2b6c58b835 *DESCRIPTION
 e02e38b5e4a9143901f21d0771cea18f *LICENSE
 991ecce17a6a018e65399d39c234f463 *NAMESPACE
 4259bb1ea39d86946e882bff39e72d77 *R/RcppExports.R
@@ -17,15 +17,15 @@ b03f0f7d8c5ebdef1dc22ee032538e47 *R/match_2C.R
 30d46ee8c9f8058de6b98b5aee85333e *R/match_2C_mat.R
 09a74ebe741377b08b9e951fc0321589 *R/solve_network_flow.R
 048b7f325af6a0509e9603190120fe01 *R/stitch_two_nets.R
-e7bbd399c9a17ea8c9bd5729fc863179 *R/stitch_two_nets_template.R
-b4e434161cb75cfd6f47b668c05381cf *R/template_match.R
-c227d5e0da5830e24cf0ab1c80236ed1 *R/treated_control_net.R
+573f294be19e41bcc317fff301137673 *R/stitch_two_nets_template.R
+c7bc5779b938ae5f0e802eaa45942192 *R/template_match.R
+47933f3694b1cc9b3f390ea804022f53 *R/treated_control_net.R
 b44ad50eaf4b0d922de28e4fd0dc71bc *R/unload.R
 3b583d436c6c6bd51eb8905e65cd4dc5 *build/vignette.rds
 9f95db386299a4009c2a81b6d2111bfb *data/dt_Rouse.rda
 73aa5af130fed94e9148bdfa4d2f7797 *inst/doc/tutorial.R
 1ea0ddd9fe7f796698c01de6a4f0c065 *inst/doc/tutorial.Rmd
-153445d44265969d718e7713abdc2b23 *inst/doc/tutorial.html
+58c17e2cf1d53556930132fe5d314839 *inst/doc/tutorial.html
 dfeb133c30b1ec5d57ea25fb1b1a2e00 *man/NewPackage-package.Rd
 cabf9cc8a988214e7a216d75c36775b1 *man/check_balance.Rd
 a555c4f676bd6cd12c79c43938aa5654 *man/check_balance_template.Rd
@@ -43,7 +43,7 @@ db2e7a7e66151165f28042b4fb5d6c5e *man/match_2C_mat.Rd
 d2c694f7b9c0bf2022a123cfbaacb9cf *man/solve_network_flow.Rd
 00ebb5c3df366121d57b5eeb6c89c49b *man/stitch_two_nets.Rd
 0c3330ca2db01afffbc3d4676d54cc4f *man/stitch_two_nets_template.Rd
-d8dcebb94e1a9d25cbf98c8d3b686e50 *man/template_match.Rd
+f7e6d9f04d0c4e6e34c05cf212fc6524 *man/template_match.Rd
 89af0aba6fc2b5fb40309e700e67bacc *man/treated_control_net.Rd
 424c2a7224300ce2890b1491917305cf *src/RcppExports.cpp
 919ee60919db23c45b207e8da5c001fb *src/init.c

@@ -11,7 +11,7 @@
 #'@param Z A length-n vector of treatment indicator.
 #'@param dataset Dataset to be matched.
 #'@param multiple Number of treated units matched to each template unit. Default is 1.
-#'@param lambda A tuning parameter controlling the trade-off between internal and external validity. A large lambda favors resemblance to the template.
+#'@param lambda A tuning parameter controlling the trade-off between internal and external validity. A large lambda favors internal validity of the matched sample. A small lambda favors resemblance to the template.
 #'@param caliper_gscore Size of generalizability caliper.
 #'@param k_gscore Connect each template unit to k_gscore treated units closest in the generalizability score.
 #'@param penalty_gscore Penalty for violating the generalizability caliper. Set to Inf by default.
