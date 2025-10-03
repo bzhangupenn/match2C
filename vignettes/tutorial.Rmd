@@ -1,0 +1,515 @@
+---
+title: "Tutorial for R Package match2C"
+author: 
+  - name: "Bo Zhang"
+    affiliation: "Vaccine and Infectious Disease Division, Fred Hutchinson Cancer Center"
+  - name: "Qian Meng"
+    affiliation: "Department of Statistics, University of Washington"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Tutorial for R Package match2C}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  fig.width=7.5, 
+  fig.height=5, 
+  comment = "#>"
+)
+```
+
+```{r setup, warning=FALSE}
+options(scipen = 99)
+options(digits = 2)
+library(match2C)
+library(ggplot2)
+library(mvtnorm)
+library(tableone)
+```
+
+# Introduction
+
+## Preparation of data
+This file serves as an introduction to the **R** package **match2C**. We first load the package and an illustrative dataset from Rouse (1995). For the purpose of illustration, we will mostly work with 6 covariates: two nominal (black and female), two ordinal (father's education and mother's education), and two continuous (family income and test score). Treatment is an instrumental-variable-defined exposure, equal to $1$ if the subject is doubly encouraged, meaning the both the excess travel time and excess four-year college tuition are larger than the median, and to be $0$ if the subject is doubly discouraged. There are $1,122$ subjects that are doubly encouraged (treated), and $1,915$ that are doubly discouraged (control). 
+
+Below, we specify covariates to be matched (X) and the exposure (Z), and fit a propensity score model. 
+
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+attach(dt_Rouse)
+X = cbind(female,black,bytest,dadeduc,momeduc,fincome) # covariates to be matched
+Z = IV # IV-defined exposure in this dataset
+
+# Fit a propensity score model
+propensity = glm(IV~female+black+bytest+dadeduc+momeduc+fincome,
+                 family=binomial)$fitted.values
+
+# Number of treated and control
+n_t = sum(Z) # 1,122 treated
+n_c = length(Z) - n_t # 1,915 control
+
+dt_Rouse$propensity = propensity
+detach(dt_Rouse)
+```
+
+## Glossary of Matching Terms
+We define some useful statistical matching terminologies:
+
+* **Bipartite Matching**: Matching control subjects to treated subjects based on a binary treatment status. 
+
+* **Tripartite Matching**: Matching control subjects to treated subjects based on a tripartite network. A tripartite 
+network consists of two bipartite networks: a left network and a right network, where the right network is a mirror
+copy of the left network in nodes, but with possibly different distance structure. Typically the left network is responsible
+for close pairing and the right network is responsible for balancing; See Zhang et al., (JASA, 2021) for details.
+
+* **Pair Matching**: Matching one control subject to one treated subject.
+
+* **Optimal Matching**: Matching control subjects to treated subjects such that some properly defined sum of
+total distances is minimized.
+
+* **Propensity Score**: The propensity score is the conditional probability of assignment to a particular treatment given a vector of observed covariates (Rosenbaum and Rubin, 1983).
+
+* **Mahalanobis Distance**: A multivariate measure of covariate distance between units in a sample (Mahalanobis, 1936). The squared Mahalanobis distance is equal to the difference in covariate values of treated units and matched control units, divided by the covariate's standard deviation. Mahalanobis distance takes into account the correlation structure among covariates. The distance is zero if two units have the same value for all covariates and increases as two units become more dissimilar.
+
+* **Exact Matching**: Matching cases to controls requiring the same value of a nominal covariate.
+
+* **Fine Balance**: A matching technique that balances exactly the marginal distribution of one nominal variable or the joint distribution of several nominal variables in the treated and control groups after matching (Rosenbaum et al., 2007; Yu et al., 2020).
+
+For more details on statistical matching and statistical inference procedures after matching, see *Observational Studies* (Rosenbaum, 2002) and *Design of Observational Studies* (Rosenbaum, 2010).
+
+
+# Statistical Matching Workflow: Match, Check Balance, and (Possibly) Iterate
+
+## An Overview of the Family of Three Matching Functions *match_2C*, *match_2C_mat*, and *match_2C_list*
+In the package **match2C**, three functions are primarily responsible for the main task statistical matching. These three functions
+are *match_2C*, *match_2C_mat*, and *match_2C_list*. We will examine more closely their differences and illustrate their usage 
+with numerous examples in later sections. In this section we give a high-level outline of what each of them does. In short, the 
+three functions have the same output format (details in the next section), but are different in their inputs. 
+
+Function *match_2C_mat* takes as input at least one distance matrix. A distance matrix is a n_t-by-b_c matrix
+whose ij-th entry encodes a measure of distance (or similarity) between the i-th treated and the j-th control subject. 
+Hence, function *match_2C_mat* is most handy for users who are familiar with constructing and working with 
+distance matrices. One commonly-used way to construct a distance matrix is to use the function *match_on*
+in the package **optmatch** (Hansen, 2007).
+
+Function *match_2C_list* is similar to *match_2C_mat* except that it requires at least one distance list as input. 
+A list representation of a treatment-by-control distance matrix consists of the following arguments:
+
+* *start_n*: a vector containing the node numbers of the start nodes of each arc in the network.
+* *end_n*: a vector containing the node numbers of the end nodes of each arc in the network.
+* *d*: a vector containing the integer cost of each arc in the network.
+
+Nodes 1,2,...,n_t correspond to *n_t* treatment nodes, and n_t + 1, n_t + 2, ..., n_t + n_c correspond to *n_c* control nodes. 
+Note that *start_n*, *end_n*, and *d* have the same lengths, all of which equal to the number of edges. Functions *create_list_from_scratch*
+and *create_list_from_mat* in the package allow users to construct a (possibly sparse) distance list with a possibly 
+user-specified distance measure. We will discuss how to construct distance lists in later sections.
+
+Function *match_2C* is a wrap-up of *match_2C_list* with pre-specified distance list structures. For the left network, 
+a Mahalanobis distance between covariates X is adopted; For the right network, an L-1 distance between the propensity score is used. 
+A large penalty is applied so that the algorithm prioritizes balancing the propensity score distributions in the treated and 
+matched control groups, followed by minimizing the sum of within-matched-pair Mahalanobis distances. Function *match_2C* further 
+allows fine-balancing the joint distribution of a few key covariates. The hierarchy goes in
+the order of fine-balance >> propensity score distribution >> within-pair Mahalanobis distance.
+
+
+## Object Returned by *match_2C*, *match_2C_mat*, and *match_2C_list*
+Objects returned by the family of matching functions *match_2C*, *match_2C_mat*, and *match_2C_list* are the same in format: 
+a list of the following three elements: 
+
+* *feasible*: 0/1 depending on the feasibility of the matching problem; 
+
+* *data_with_matched_set_ind*: a data frame that is the same as the original data frame, except that a column called *matched_set* and a column called *distance* are added to it. Variable *matched_set* assigns 1,2,...,n_t to each matched set, and NA to controls not matched to any treated. Variable *distance* records the control-to-treated distance in each matched pair, and assigns NA to all treated and controls that are left unmatched. If matching is not feasible, NULL will be returned;
+
+* *matched_data_in_order*: a data frame organized in the order of matched sets and otherwise the same as *data_with_matched_set_ind*. Null will be returned if the matching is unfeasible.
+
+```{r intro example, echo=FALSE}
+dist_list_pscore = create_list_from_scratch(Z, X, exact = NULL, p = propensity, 
+                                       caliper_low = 0.008, 
+                                       k = NULL, 
+                                       method = 'robust maha')
+
+matching_output_example = match_2C_list(Z, dt_Rouse, 
+                                        dist_list_pscore, 
+                                        dist_list_2 = NULL, 
+                                        controls = 1)
+```
+
+
+Let's take a look at an example output returned by the function *match_2C_list*. The matching problem is indeed feasible:
+```{r intro example feasible, echo=TRUE}
+# Check feasibility
+matching_output_example$feasible
+```
+
+Let's take a look at the data frame *data_with_matched_set_ind*. Note that it is indeed the same as the original dataset except that a column *matched_set* and a column *distance* are appended. Observe that the first six instances belong to $6$ different matched sets; therefore *matched_set* is from $1$ to $6$. The first six instances are all treated subjects so *distance* is NA.
+
+```{r intro example data1, echo=TRUE}
+# Check the original dataset with two new columns
+head(matching_output_example$data_with_matched_set_ind, 6)
+```
+
+
+Finally, *matched_data_in_order* is *data_with_matched_set_ind* organized in the order of matched sets. Note that the first $2$ subjects belong to the same matched set; the next two subjects belong to the second matched set, and etc. 
+```{r intro example data2, echo=TRUE}
+# Check dataframe organized in matched set indices
+head(matching_output_example$matched_data_in_order, 6)
+```
+
+
+## Checking Balance
+Statistical matching belongs to the design stage of an observational study. The ultimate goal of statistical matching
+is to embed observational data into an approximate randomized controlled trial and the matching process should always 
+be conducted without access to the outcome data. Not looking at the outcome at the design stage means researchers could
+in principle keep adjusting their matched design until some pre-specified design goal is achieved. A rule of thumb is that
+the standardized differences of each covariate, i.e., difference in means after matching divided by pooled standard error 
+before matching, is less than 0.1. 
+
+Function *check_balance* in the package provides simple balance check and visualization. In the code chunk below,
+*matching_output_example* is an object returned by the family of matching functions *match_2C_list*/*match_2C*/*match_2C_mat* (we give details on how to use these functions later). Function *check_balance* then takes as input a vector of 
+treatment status Z, an object returned by match_2C (or match_2C_mat or match_2C_list), a vector of covariate names for 
+which we would like to check balance, and output a balance table.
+
+There are six columns of the balance table:
+
+1. Mean covariate values in the treated group (Z = 1) *before* matching.
+
+1. Mean covariate values in the control group (Z = 0) *before* matching.
+
+1. Standardized differences *before* matching.
+
+1. Mean covariate values in the treated group (Z = 1) *after* matching.
+
+1. Mean covariate values in the control group (Z = 0) *after* matching.
+
+1. Standardized differences *after* matching.
+
+
+```{r intro example check balance table, echo=TRUE}
+tb_example = check_balance(Z, matching_output_example, 
+              cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+              plot_propens = FALSE)
+print(tb_example)
+```
+
+
+
+Function *check_balance* may also plot the distribution of the propensity score among the treated subjects, all conrol 
+subjects, and the matched control subjects by setting option *plot_propens = TRUE* and supplying the option *propens* with
+estimated propensity scores as shown below. In the figure below, the blue curve corresponds to the propensity score distribution
+among 1,122 treated subjects, the red curve among 1,915 control subjects, and the green curve among 1,122 matched controls.
+It is evident that after matching, the propensity score distribution aligns better with that of the treated subjects.
+
+```{r intro example check balance plot, echo=TRUE}
+tb_example = check_balance(Z, matching_output_example, 
+              cov_list = c('female', 'black', 'bytest', 'fincome', 
+                           'dadeduc', 'momeduc', 'propensity'),
+              plot_propens = TRUE, propens = propensity)
+```
+
+
+# Introducing the Main Function *match_2C*
+
+
+## A Basic Match with Minimal Input
+Function *match_2C* is a wrapper function of *match_2C_list* with a carefully-chosen distance structure. 
+Compare to *match_2C_list* and *match_2C_mat*, *match_2C* is less flexible; however, it requires minimal
+input from the users' side, works well in most cases, and therefore is of primary interest to most users.
+
+The minimal input to function *match_2C* is the following:
+
+1. treatment indicator vector, 
+1. a matrix of covariates to be matched, 
+1. a vector of estimated propensity score, and 
+1. the original dataset to which match sets information is attached.
+
+By default, *match_2C* performs a statistical matching that:
+
+1. maximally balances the marginal distribution of the propensity score in the treated and matched control group, and 
+1. subject to 1, minimizes the within-matched-pair Mahalanobis distances.
+
+The code chunk below displays how to perform a basic match using function *match_2C* with minimal input, 
+and then check the balance of such a match. The balance is very good and the propensity score distributions 
+in the treated and matched control group almost perfectly align with each other.
+
+
+
+```{r match2C no caliper, echo=TRUE}
+# Perform a matching with minimal input
+matching_output = match_2C(Z = Z, X = X, 
+                           propensity = propensity, 
+                           dataset = dt_Rouse)
+tb = check_balance(Z, matching_output, 
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+                   plot_propens = TRUE, propens = propensity)
+print(tb)
+```
+
+
+## Incorporating Exact Matching Constraints
+
+Researchers can also incorporate the exact matching constraints by specifying the variables to be exactly matched in the option exact. In the example below, we match exactly on father’s education and mother’s education. The matching algorithm still tries to find a match that maximally balance the propensity score distribution, and then minimzies the treated-to-control total distances, subject to the exact matching constraints.
+
+One can check that father’s education and mother’s education are exactly matched. Moreover, since the matching algorithm separates balancing the propensity score from exact matching, the propensity score distributions are still well balanced.
+
+```{r match2c exact}
+# Perform a matching with minimal input
+matching_output_with_exact = match_2C(Z = Z, X = X, exact = c('dadeduc', 'momeduc'),
+                           propensity = propensity, 
+                           dataset = dt_Rouse)
+
+# Check exact matching
+head(matching_output_with_exact$matched_data_in_order[, c('female', 'black', 'bytest', 
+                                      'fincome', 'dadeduc', 'momeduc', 
+                                      'propensity', 'IV', 'matched_set')])
+
+# Check overall balance
+tb = check_balance(Z, matching_output_with_exact, 
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+                   plot_propens = TRUE, propens = propensity)
+
+```
+
+## Incorporating Fine Balancing Constraints
+
+Function *match_2C* also allows incorporating the (near-)fine balancing constraints. (Near-)fine balance refers to maximally balancing the marginal
+distribution of a nominal variable, or more generally the joint distribution of a few nominal variables, in the treated and matched control groups. 
+Option *fb* in the function *match_2C* serves this purpose. Once the fine balance is turned on, *match_2C* then performs a statistical matching that:
+
+1. maximally balances the marginal distribution of nominal levels specified in the option *fb*,
+1. subject to 1. maximally balances the marginal distribution of the propensity score in the treated and matched control group, and 
+1. subject to 2, minimizes the within-matched-pair Mahalanobis distances.
+
+The code chunk below builds upon the last match by further requiring fine balancing the nominal variable *dadeduc*:
+
+```{r match2C fine balance, echo=TRUE}
+# Perform a matching with fine balance
+matching_output2 = match_2C(Z = Z, X = X, 
+                            propensity = propensity, 
+                            dataset = dt_Rouse,
+                            fb_var = c('dadeduc'))
+```
+
+We examine the balance and the variable *dadeduc* is indeed finely balanced.
+```{r match2C fine balance check, echo=TRUE}
+# Perform a matching with fine balance
+tb2 = check_balance(Z, matching_output2, 
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+                   plot_propens = TRUE, propens = propensity)
+print(tb2)
+```
+One can further finely balance the joint distribution of multiple nominal variables. The code chunk below finely balances the joint distribution
+of father's (4 levels) and mother's (4 levels) education ($4 \times 4 = 16$ levels in total).
+
+```{r match2C fine balance 2, echo=TRUE}
+# Perform a matching with fine balance on dadeduc and moneduc
+matching_output3 = match_2C(Z = Z, X = X, 
+                            propensity = propensity, 
+                            dataset = dt_Rouse,
+                            fb_var = c('dadeduc', 'momeduc'))
+tb3 = check_balance(Z, matching_output2, 
+                   cov_list = c('female', 'black', 'bytest', 'fincome', 'dadeduc', 'momeduc', 'propensity'),
+                   plot_propens = FALSE)
+print(tb3)
+```
+
+
+## Sparsifying the Network to Match Faster and Match Bigger Datasets
+
+Sparsifying a network refers to deleting certain edges in a network. Edges deleted typically connect a treated and a control subject that
+are unlikely to be a good match. Using the estimated propensity score as a caliper to delete unlikely edges is the most commonly used strategy.
+For instance, a propensity score caliper of 0.05 would result in deleting all edges connecting one treated and one control subject whose estimated
+propensity score differs by more than 0.05. Sparsifying the network has potential to greatly facilitate computation (Yu et al., 2020). 
+
+Function *match_2C* allows users to specify two caliper sizes on the propensity scores, *caliper_left* for the left network and *caliper_right*
+for the right network. If users are interested in specifying a caliper other than the propensity score and/or specifying an asymmetric 
+caliper (Yu and Rosenbaum, 2020), functions *match_2C_list* serves this purpose (see Section 4 for details). Moreover, users may further trim
+the number of edges using the option *k_left* and *k_right*. By default, each treated subject in the network is connected to each of the n_c control subjects. Option *k_left* allows users to specify that each treated subject gets connected only to the *k_left* control subjects who are 
+closest to the treated subject in the propensity score in the left network. For instance, setting *k_left = 200* results in each treated 
+subject being connected to at most 200 control subjects closest in the propensity score in the left network. Similarly, option *k_right* allows
+each treated subject to be connected to the closest *k_right* controls in the right network. Options *caliper_low*, *caliper_high*, 
+*k_left*, and *k_right* can be used together.
+
+Below, we give a simple example illustrating the usage of caliper and contrasting the running time of applying *match_2C* without any caliper,
+one caliper on the left, and both calipers on the left and the right. Using double calipers in this case roughly cuts the computation time by 
+almost two-thirds.
+
+```{r match2C with or without caliper speed, echo=TRUE}
+# Timing the vanilla match2C function
+ptm <- proc.time()
+matching_output2 = match_2C(Z = Z, X = X, 
+                            propensity = propensity, 
+                            dataset = dt_Rouse)
+time_vanilla = proc.time() - ptm
+
+# Timing the match2C function with caliper on the left
+ptm <- proc.time()
+matching_output_one_caliper = match_2C(Z = Z, X = X, propensity = propensity, 
+                            caliper_left = 0.05, caliper_right = 0.05, 
+                            k_left = 100,
+                            dataset = dt_Rouse)
+time_one_caliper = proc.time() - ptm
+
+# Timing the match2C function with caliper on the left and right
+ptm <- proc.time()
+matching_output_double_calipers = match_2C(Z = Z, X = X, 
+                            propensity = propensity, 
+                            caliper_left = 0.05, caliper_right = 0.05, 
+                            k_left = 100, k_right = 100,
+                            dataset = dt_Rouse)
+time_double_caliper = proc.time() - ptm
+
+rbind(time_vanilla, time_one_caliper, time_double_caliper)[,1:3]
+```
+
+Caveat: if caliper sizes are too small, the matching may be unfeasible. See the example below.
+In such an eventuality, users are advised to increase the caliper size and/or remove the exact
+matching constraints.
+
+```{r match2C small caliper fail, echo=TRUE}
+# Perform a matching with fine balance on dadeduc and moneduc
+matching_output_unfeas = match_2C(Z = Z, X = X, propensity = propensity, 
+                                  dataset = dt_Rouse,
+                                  caliper_left = 0.001)
+```
+
+## Force including certain controls into the matched cohort
+
+Sometimes, researchers might want to include certain controls in the final matched cohort. Option *include* in the function *match_2C* serves this purpose. The option *include* is a binary vectors (0's and 1's) whose length equal to the total 
+number of controls, with 1 in the i-th entry if the i-th control has to be included and 0 otherwise. For instance, the match
+below forces including the first 100 controls in our matched samples.
+
+```{r match2C force control, echo=TRUE}
+
+# Create a binary vector with 1's in the first 100 entries and 0 otherwise
+# length(include_vec) = n_c
+
+include_vec = c(rep(1, 100), rep(0, n_c - 100))
+# Perform a matching with minimal input
+matching_output_force_include = match_2C(Z = Z, X = X, 
+                           propensity = propensity, 
+                           dataset = dt_Rouse, 
+                           include = include_vec)
+```
+
+One can check that the first 100 controls in the original dataset are forced into the final matched samples.
+
+```{r match2C force control 2, echo=TRUE}
+
+matched_data = matching_output_force_include$data_with_matched_set_ind
+matched_data_control = matched_data[matched_data$IV == 0,]
+head(matched_data_control) # Check the matched_set column
+```
+
+# Variable-Ratio Matching with Fine Balance
+
+## One-shot Approach
+
+This section provides an introduction to how to conduct the one-shot variable-ratio matching with fine balance in R by the instance of RHC dataset. At first, we load the RHC dataset of two versions and examine the balance across groups for the insurance type, the covariate used for fine balance in the subsequent analysis. The dataset *dt_rhc* represents the original data, whereas *dt_rhc_ac* is the cleaned subset used for analysis.
+
+```{r, echo = TRUE}
+data("dt_rhc")
+data("dt_rhc_ac")
+# Balance table for the baseline covariate used for fine balance
+CreateTableOne(vars = "ninsclas", strata = "z", data = dt_rhc, factorVars = "ninsclas",
+includeNA = TRUE)
+```
+
+To apply the proposed method, the minimal input to function *create_list_from_scratch_vr* is:
+
+- **Z**: the treatment indicator vector  
+- **X**: the baseline covariates to be matched and to be finely balanced  
+- **fine**: the covariate name used for fine balance  
+- **method**: distance measure
+
+The estimated propensity scores may also be specified, along with a caliper, to ensure that each treated unit is matched to a fixed number of candidate controls lying within the caliper range. The parameter **ad** can be adjusted to yield a smaller value of $\kappa = \text{ad} \times \kappa_{\text{max}}$.
+
+*create_list_from_scratch_vr* returns a list representation of a treatment-by-control distance matrix that consists of:
+
+- *start_n*: a vector containing the node numbers of the start nodes of each arc in the network  
+- *end_n*: a vector containing the node numbers of the end nodes of each arc in the network  
+- *d*: a vector containing the cost of each arc in the network
+
+The function *treated_control_net_vr* completes the network specification by introducing the **Source**, **Sink**, and **Overflow** nodes, and by assigning upper capacity constraints together with the supply or demand associated with each node. Once the network flow problem has been solved by *solve_network_flow*, the function *construct_outcome_vr* produces the final output—a list comprising the following three elements:
+
+- *feasibility*: `0/1` depending on the feasibility of the matching problem  
+- *data_with_matched_to_ind*: a data frame that is the same as the original data frame, except that a column called *matched_to*, a column called *distance*, and a column called *match_to_index* are added to it. The variable *matched_to* records the order of the treated unit within the treatment group for each matched control, and assigns `NA` to controls not matched to any treated unit. The variable *match_to_ind* then converts this order into the original observation index. Variable *distance* records the control-to-treated distance between one matched control and the corresponding treated unit, and assigns `NA` to controls that are left unmatched and all treated units. If matching is not feasible, `NULL` will be returned.  
+- *data_without_unmatched_controls*: a data frame that is the same as *data_with_matched_to_ind*, except that the unmatched controls are removed. If matching is not feasible, `NULL` will be returned.
+
+```{r variable-ratio matching with fine balance, echo = TRUE}
+p <- glm(
+  z ~ . - ninsclasMedicare 
+  - `ninsclasMedicare & Medicaid` 
+  - `ninsclasNo insurance` 
+  - `ninsclasPrivate` 
+  - `ninsclasPrivate & Medicare`,
+  data = dt_rhc_ac, 
+  family = binomial()
+)
+dt_rhc_ac$p <-  predict(p, type = "response")
+dt_cov <- dt_rhc_ac[, setdiff(colnames(dt_rhc_ac), c("z")),drop = FALSE]
+
+out_dt_rhc <- create_list_from_scratch_vr(Z = dt_rhc_ac$z, X = dt_cov, p = dt_rhc_ac$p, caliper_low = 0.10, fine = c("ninsclasMedicare","ninsclasMedicare & Medicaid","ninsclasNo insurance","ninsclasPrivate","ninsclasPrivate & Medicare"), ad = 0.8,method = "maha")
+net_dt_rhc <- treated_control_net_vr(n_t = sum(dt_rhc_ac$z), n_c = length(dt_rhc_ac$z) - sum(dt_rhc_ac$z), dist_list = out_dt_rhc, maxcontrols = 7, mincontrols = 1)
+sol_dt_rhc <- solve_network_flow(net_dt_rhc)
+res_dt_rhc <- construct_outcome_vr(res = sol_dt_rhc, dist_list = out_dt_rhc, Z = dt_rhc_ac$z, dataset = dt_rhc)
+A_dt_rhc_matched <- res_dt_rhc$data_without_unmatched_controls
+
+tab <- CreateTableOne(vars = c("age_group","sex","edu","race","income","das2d3pc","ca","resp1","paco21","temp1", "urin1adjusted", "urin1miss","wblc1", "sod1", "pot1","renalhx", "liverhx","ninsclas"), strata = "z",data = A_dt_rhc_matched, factorVars = c("age_group","sex","race","ca","urin1miss","renalhx", "liverhx","ninsclas"))
+print(tab, smd = TRUE)
+```
+
+## Divide-and-conquer Approach
+
+Each unit is first assigned to a subgroup ($1$–$4$) according to its estimated propensity score using the function *assign_int*. For subgroup $i$, the algorithm attempts a $1$-to-$i$ matching with fine balance. The total number of subgroups, also the maximum number of control units that can be matched to each treated unit, is specified by the user. In this section, we set this number to $4$.
+
+```{r dac subgroup, echo=TRUE}
+num <- 4 
+# the number of strata pre-specified by users
+# which is also the maximum number of control units matched per treated unit
+
+Group_index <- assign_int(dt_rhc_ac$p,beta = num)
+dt_rhc_ac$subgroup <- Group_index
+# determine which stratum each unit belongs to
+```
+
+For each subgroup $i$, if 1-to-$i$ matching with fine balance is infeasible, the procedure relaxes to 1-to-$(i-1)$ matching with fine balance. If even pair matching with fine balance cannot be achieved, we perform pair matching with near-fine balance. The function *match_subgroup_auto* automates this entire process. Eventually, this function returns a data frame identical to the input argument "data" with two additional columns:
+- *distance*: the computed distance value associated with the matched set;
+- *matched_to_index*: an identifier indicating the treated unit to which each control has been matched. 
+
+```{r dac analysis, echo=TRUE}
+dt_rhc$p <- dt_rhc_ac$p
+dt_rhc$subgroup <- dt_rhc_ac$subgroup
+fineused <- c("ninsclasMedicare","ninsclasMedicare & Medicaid","ninsclasNo insurance","ninsclasPrivate","ninsclasPrivate & Medicare")
+
+match_list <- vector("list", num)
+
+## loop over subgroups 1 to 4 
+for (i in 1:num) {
+  dt_rhc_i    <- dt_rhc   [dt_rhc$subgroup    == i, , drop = FALSE]
+  dt_rhc_ac_i <- dt_rhc_ac[dt_rhc_ac$subgroup == i, , drop = FALSE]
+  X_i <- dt_rhc_ac_i[, setdiff(colnames(dt_rhc_ac_i), c("z","subgroup")), 
+                     drop = FALSE]
+  
+  match_list[[i]] <- match_subgroup_auto(Z = dt_rhc_ac_i$z, X = X_i, 
+                                         fine = fineused, data = dt_rhc_i, 
+                                         kmax = num, method = "maha")
+}
+```
+
+After matching each subgroup, we combine the results and check post-matching covariate balance.
+
+```{r dac combine, echo=TRUE}
+## bind, then order by numeric rownames if available
+A_matched_dc <- do.call(rbind, match_list)
+A_matched_dc <- A_matched_dc[order(as.numeric(row.names(A_matched_dc))),]
+print(CreateTableOne(vars = c("age_group","sex","edu","race","income","das2d3pc","ca","resp1","paco21",
+  "temp1","urin1adjusted", "urin1miss","wblc1", "sod1", "pot1","renalhx",
+  "liverhx","ninsclas"),
+  strata = "z",data = A_matched_dc, factorVars =
+  c("age_group","sex","race","ca","urin1miss","renalhx", "liverhx","ninsclas")),
+  smd = TRUE)
+
+```
+
